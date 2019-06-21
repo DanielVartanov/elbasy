@@ -9,21 +9,29 @@ import (
 	// "time"
 )
 
-func main() {
+func RunProxyServer() net.Listener {
 	listener, error := net.Listen("tcp", "0.0.0.0:8080")
 	if error != nil {
 		fmt.Println("Error on net.Listen")
 		os.Exit(1)
 	}
-	fmt.Println("Listening the port 8080")
-	fmt.Println("listener.Addr() == " + listener.Addr().String())
+	fmt.Println("Proxy server is running at " + listener.Addr().String())
 
-	for {
-		client_connection, error := listener.Accept()
-		if error != nil {
-			fmt.Println("Error on listener.Accept()")
-			os.Exit(1)
+	go func() {
+		for {
+			clientConnection, error := listener.Accept()
+			if error != nil {
+				fmt.Println("Error on listener.Accept()")
+				fmt.Println(error)
+				os.Exit(1)
+			}
+			fmt.Println("Accepted a connection at Proxy from " + clientConnection.LocalAddr().String() + " | " + clientConnection.RemoteAddr().String())
+
 		}
-		fmt.Println("Accepted a connection from " + client_connection.LocalAddr().String() + " | " + client_connection.RemoteAddr().String())
-	}
+	}()
+	return listener
+}
+
+func main() {
+	RunProxyServer()
 }
