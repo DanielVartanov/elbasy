@@ -1,6 +1,5 @@
 package main
 
-
 import (
 	"testing"
 	"os"
@@ -13,6 +12,12 @@ import (
 	"./mock_server"
 )
 
+/*
+
+proxyServer = proxy_server.NewProxyServer(...)
+defer proxyServer.Close()
+
+*/
 
 func TestProxyServer(t *testing.T) {
 	var mockServer mock_server.MockServer
@@ -20,8 +25,10 @@ func TestProxyServer(t *testing.T) {
 	defer mockServer.Close()
 	fmt.Println("Mock server is running at " + mockServer.URL)
 
-	proxyServer := RunProxyServer()
+	var proxyServer ProxyServer
+	proxyServer.BindToPort()
 	defer proxyServer.Close()
+	go proxyServer.AcceptConnections()
 
 	os.Setenv("HTTP_PROXY", "http://127.0.0.1:8080") // politeAPIProxy.ProxyURL()
 	proxyUrl, error := url.Parse("http://localhost:8080") // Why env var not working?
