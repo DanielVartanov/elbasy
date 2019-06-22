@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net"
 	"fmt"
 	"os"
 	"net/http"
@@ -14,27 +13,16 @@ import (
 type ProxyServer struct {
 	URL string
 
-	socketListener net.Listener
+	server *http.Server
 }
 
-func (proxyServer *ProxyServer) BindToPort() {
+func (proxyServer *ProxyServer) Setup() {
 	proxyServer.URL = "http://localhost:8080"
 
-	/*
-	listener, error := net.Listen("tcp", "0.0.0.0:8080")
-	if error != nil {
-		fmt.Println("Error on net.Listen")
-		os.Exit(1)
-	}
-	proxyServer.socketListener = listener
-	proxyServer.URL = "http://localhost:8080"
-
-	fmt.Println("Proxy server is running at " +
-		proxyServer.socketListener.Addr().String())
-
-*/
+	proxyServer.server = &http.Server{Addr: ":8080", Handler: proxyServer}
 }
 
+// do not run yourself (shall we have anoyter type for that?)
 func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	fmt.Println("Received a request at Proxy")
 	fmt.Printf("RequestURI = %s, URL = %s\n", request.RequestURI, request.URL.String())
@@ -45,37 +33,16 @@ func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, re
 	fmt.Fprintf(responseWriter, responseFromServer)
 }
 
-func (proxyServer *ProxyServer) AcceptConnections() {
-	error := http.ListenAndServe(":8080", proxyServer)
+func (proxyServer *ProxyServer) Run() {
+	error := proxyServer.server.ListenAndServe()
 	if error != nil {
 		log.Fatal(error)
 		os.Exit(1)
 	}
-
-	/*
-	for {
-		clientToProxyConnection, error := proxyServer.socketListener.Accept()
-		if error != nil {
-			fmt.Println("Error on listener.Accept()")
-			fmt.Println(error)
-			os.Exit(1)
-		}
-		fmt.Println("Accepted a connection at Proxy from " + clientToProxyConnection.LocalAddr().String() + " | " + clientToProxyConnection.RemoteAddr().String())
-
-		go proxyServer.handleConnection(&clientToProxyConnection)
-
-	}
-*/
 }
-
-/*
-func (proxyServer *ProxyServer) handleConnection(clientToProxyConnection *Conn) {
-
-}
-*/
 
 func (proxyServer *ProxyServer) Close() {
-	// proxyServer.socketListener.Close()
+	proxyServer.server.Close()
 }
 
 func (proxyServer *ProxyServer) makeRequestToServer(requestURL string) string {

@@ -16,9 +16,9 @@ func TestProxyServer(t *testing.T) {
 	fmt.Println("Mock server is running at " + mockServer.URL)
 
 	var proxyServer ProxyServer
-	proxyServer.BindToPort()
+	proxyServer.Setup()
 	defer proxyServer.Close()
-	go proxyServer.AcceptConnections()
+	go proxyServer.Run()
 
 	clientRequestSender := ClientRequestSender{
 		ServerURL: mockServer.URL,

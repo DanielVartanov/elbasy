@@ -17,6 +17,12 @@ What to do next
 **** [V] Read from server, write to client
 **** Detect server connection closure, close client connection if so (it's not our job to act on Keep-Alive)
 
+// An idea:
+        // ConnState specifies an optional callback function that is
+        // called when a client connection changes state. See the
+        // ConnState type and associated constants for details.
+        http.Server.ConnState func(net.Conn, ConnState)
+
 *** Make proxy parse the requests
 **** Read out entire request (how did we detect the request is fully read? Content-Length?)
 **** Open a server connection and put a request there only when entire request is fully read
@@ -28,7 +34,7 @@ What to do next
 
 * Make the first version presentable at a meetup/conference
 ** Make mock server stop gracefully (stop it over a quit-channel?)
-** Make proxy server stop gracefully ("use of closed connection" is annoying)
+** Make proxy server stop gracefully (use Server.Shutdown(context) instead of Close)
 ** Look at implementation style https://github.com/go-httpproxy/httpproxy
 
 * Make the first version usable in production
