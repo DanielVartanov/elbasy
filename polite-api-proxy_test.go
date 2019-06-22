@@ -6,37 +6,16 @@ import (
 	"os"
 	// "net"
 	"net/http"
-	"net/http/httptest"
 	"fmt"
 	"io/ioutil"
 	"time"
 	"net/url"
+	"./mock_server"
 )
 
-type MockServer struct {
-	URL string
-
-	httptestServer *httptest.Server
-}
-
-func (mockServer *MockServer) Start() {
-	mockServer.httptestServer = httptest.NewServer(
-		http.HandlerFunc(
-			func (responseWriter http.ResponseWriter, request *http.Request) {
-				fmt.Println("Received a request at Mock server")
-				fmt.Fprintln(responseWriter, "ololo-shmololo")
-			},
-		),
-	)
-	mockServer.URL = mockServer.httptestServer.URL
-}
-
-func (mockServer *MockServer) Close() {
-	mockServer.httptestServer.Close()
-}
 
 func TestProxyServer(t *testing.T) {
-	var mockServer MockServer
+	var mockServer mock_server.MockServer
 	mockServer.Start()
 	defer mockServer.Close()
 	fmt.Println("Mock server is running at " + mockServer.URL)
