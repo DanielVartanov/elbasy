@@ -20,16 +20,6 @@ type ProxyServer struct {
 func (proxyServer *ProxyServer) BindToPort() {
 	proxyServer.URL = "http://localhost:8080"
 
-	http.HandleFunc("/", func(responseWriter http.ResponseWriter, request *http.Request) {
-		fmt.Println("Received a request at Proxy")
-		fmt.Printf("RequestURI = %s, URL = %s\n", request.RequestURI, request.URL.String())
-
-		responseFromServer := proxyServer.makeRequestToServer(request.RequestURI)
-
-		fmt.Println("Responding to the Client request from Proxy")
-		fmt.Fprintf(responseWriter, responseFromServer)
-	})
-
 	/*
 	listener, error := net.Listen("tcp", "0.0.0.0:8080")
 	if error != nil {
@@ -45,8 +35,22 @@ func (proxyServer *ProxyServer) BindToPort() {
 */
 }
 
+func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
+	fmt.Println("Received a request at Proxy")
+	fmt.Printf("RequestURI = %s, URL = %s\n", request.RequestURI, request.URL.String())
+
+	responseFromServer := proxyServer.makeRequestToServer(request.RequestURI)
+
+	fmt.Println("Responding to the Client request from Proxy")
+	fmt.Fprintf(responseWriter, responseFromServer)
+}
+
 func (proxyServer *ProxyServer) AcceptConnections() {
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	error := http.ListenAndServe(":8080", proxyServer)
+	if error != nil {
+		log.Fatal(error)
+		os.Exit(1)
+	}
 
 	/*
 	for {
