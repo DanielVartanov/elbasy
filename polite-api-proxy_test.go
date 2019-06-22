@@ -2,22 +2,12 @@ package main
 
 import (
 	"testing"
-	"os"
-	// "net"
-	"net/http"
 	"fmt"
-	"io/ioutil"
-	"time"
-	"net/url"
+	"net/http"
+	// "time"
+
 	"./mock_server"
 )
-
-/*
-
-proxyServer = proxy_server.NewProxyServer(...)
-defer proxyServer.Close()
-
-*/
 
 func TestProxyServer(t *testing.T) {
 	var mockServer mock_server.MockServer
@@ -30,28 +20,16 @@ func TestProxyServer(t *testing.T) {
 	defer proxyServer.Close()
 	go proxyServer.AcceptConnections()
 
-	os.Setenv("HTTP_PROXY", "http://127.0.0.1:8080") // politeAPIProxy.ProxyURL()
-	proxyUrl, error := url.Parse("http://localhost:8080") // Why env var not working?
-	if error != nil {
-		t.Error("Error parsing proxy URL")
+	clientRequestSender := ClientRequestSender{
+		ServerURL: mockServer.URL,
+		ProxyURL: proxyServer.URL,
 	}
-	http.DefaultTransport = &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
+	clientRequestSender.SendRequest(func(_ *http.Response, responseBodyText string) {
+		// Compare ALL fields of Response, including headers and the code!
+		if responseBodyText != "ololo-shmololo\n" {
+			t.Error("Unexpected response body:" + string(responseBodyText))
+		}
+	})
 
-	fmt.Println("Initiating a client request...")
-	response, error := http.Get(mockServer.URL)
-	if error != nil {
-		t.Error(error)
-	}
-
-	responseBodyText, error := ioutil.ReadAll(response.Body)
-	response.Body.Close()
-	if error != nil {
-		t.Error(error)
-	}
-	// Compare ALL fields of Response, including headers and the code!
-	if string(responseBodyText) != "ololo-shmololo" {
-		t.Error("Unexpected response body:" + string(responseBodyText))
-	}
-
-	time.Sleep(1 * time.Second)
+	clientRequestSender.WaitForAllRequests()
 }

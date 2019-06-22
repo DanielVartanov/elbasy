@@ -9,6 +9,8 @@ import (
 // proxyToServerConnection
 
 type ProxyServer struct {
+	URL string
+
 	socketListener net.Listener
 }
 
@@ -21,6 +23,7 @@ func (proxyServer *ProxyServer) BindToPort() {
 		os.Exit(1)
 	}
 
+	proxyServer.URL = "http://localhost:8080"
 	fmt.Println("Proxy server is running at " +
 		proxyServer.socketListener.Addr().String())
 }

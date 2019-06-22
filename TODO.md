@@ -11,8 +11,7 @@ What to do next
 **** [V] Write tests for it (faster development further! No need to run curls etc)
 ***** [V] Google whether there are special tools for testing HTTP
 ***** [V] In a separate goroutine run a mock HTTP
-**** In tests make mock server add all reached requests into an output channel
-**** [ ] Make the code nice and pleasant to work with
+**** [V] Make the code nice and pleasant to work with
 **** [ ] Initiate a connection from a proxy to a server
 **** [ ] Read from client, write to server
 **** [ ] Read from server, write to client
@@ -23,6 +22,7 @@ What to do next
 **** Open a server connection and put a request there only when entire request is fully read
 
 *** Implement leaky-bucket algorithm
+**** In tests make mock server add all reached requests into an output channel
 **** Make requests wait for quota using a buffered channel and a goroutine which replenishes quota every N milliseconds
 **** Make proxy count quotas depending on... (is the quota per shop or per client ID? Well, does not matter, implement the separation of quotas)
 
