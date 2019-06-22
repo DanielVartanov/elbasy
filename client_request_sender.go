@@ -46,9 +46,9 @@ func (self *ClientRequestSender) actuallySendRequest(callback func(response *htt
 		fmt.Println(error)
 		os.Exit(1)
 	}
-
+	defer response.Body.Close()
 	responseBodyText, error := ioutil.ReadAll(response.Body)
-	response.Body.Close()
+
 	if error != nil {
 		fmt.Println(error)
 		os.Exit(1)

@@ -12,9 +12,9 @@ What to do next
 ***** [V] Google whether there are special tools for testing HTTP
 ***** [V] In a separate goroutine run a mock HTTP
 **** [V] Make the code nice and pleasant to work with
-**** [ ] Initiate a connection from a proxy to a server
+**** [V] Initiate a connection from a proxy to a server
 **** [ ] Read from client, write to server
-**** [ ] Read from server, write to client
+**** [V] Read from server, write to client
 **** Detect server connection closure, close client connection if so (it's not our job to act on Keep-Alive)
 
 *** Make proxy parse the requests
@@ -27,8 +27,9 @@ What to do next
 **** Make proxy count quotas depending on... (is the quota per shop or per client ID? Well, does not matter, implement the separation of quotas)
 
 * Make the first version presentable at a meetup/conference
-** [ ] Make mock server stop gracefully (stop it over a quit-channel?)
-** [ ] Make proxy server stop gracefully ("use of closed connection" is annoying)
+** Make mock server stop gracefully (stop it over a quit-channel?)
+** Make proxy server stop gracefully ("use of closed connection" is annoying)
+** Look at implementation style https://github.com/go-httpproxy/httpproxy
 
 * Make the first version usable in production
 
