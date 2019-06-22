@@ -1,5 +1,6 @@
 package main
 
+
 import (
 	"testing"
 	"os"
@@ -12,12 +13,31 @@ import (
 	"net/url"
 )
 
+type MockServer struct {
+	URL string
+
+	httptestServer *httptest.Server
+}
+
+func (mockServer *MockServer) Start() {
+	mockServer.httptestServer = httptest.NewServer(
+		http.HandlerFunc(
+			func (responseWriter http.ResponseWriter, request *http.Request) {
+				fmt.Println("Received a request at Mock server")
+				fmt.Fprintln(responseWriter, "ololo-shmololo")
+			},
+		),
+	)
+	mockServer.URL = mockServer.httptestServer.URL
+}
+
+func (mockServer *MockServer) Close() {
+	mockServer.httptestServer.Close()
+}
+
 func TestProxyServer(t *testing.T) {
-	mockServer := httptest.NewServer(
-		http.HandlerFunc(func (responseWriter http.ResponseWriter, request *http.Request) {
-			fmt.Println("Received a request at Mock server")
-			fmt.Fprintln(responseWriter, "ololo-shmololo")
-		}))
+	var mockServer MockServer
+	mockServer.Start()
 	defer mockServer.Close()
 	fmt.Println("Mock server is running at " + mockServer.URL)
 
@@ -25,7 +45,7 @@ func TestProxyServer(t *testing.T) {
 	defer proxyServer.Close()
 
 	os.Setenv("HTTP_PROXY", "http://127.0.0.1:8080") // politeAPIProxy.ProxyURL()
-	proxyUrl, error := url.Parse("http://localhost:8080")
+	proxyUrl, error := url.Parse("http://localhost:8080") // Why env var not working?
 	if error != nil {
 		t.Error("Error parsing proxy URL")
 	}
