@@ -13,9 +13,14 @@ What to do next
 ***** [V] In a separate goroutine run a mock HTTP
 **** [V] Make the code nice and pleasant to work with
 **** [V] Initiate a connection from a proxy to a server
-**** [ ] Read from client, write to server
+**** [V] Read from client, write to server, make a test for it
+***** [ ] Dump requests just to be sure everything is the same
+***** [ ] Write a test that all parts of request get passed to server (just pass entire request except for requestURL)
+****** [ ] Write a test that request URL becomes request path before being sent to server
 **** [V] Read from server, write to client
+***** [ ] Write a test that all parts of response get passed to client (just pass entire response)
 **** Detect server connection closure, close client connection if so (it's not our job to act on Keep-Alive)
+**** Make proxy server copy entire request (with all the headers) and entire response (with all the headers as well)
 
 // An idea:
         // ConnState specifies an optional callback function that is
@@ -35,6 +40,7 @@ What to do next
 * Make the first version presentable at a meetup/conference
 ** Make mock server stop gracefully (stop it over a quit-channel?)
 ** Make proxy server stop gracefully (use Server.Shutdown(context) instead of Close)
+** Split ListenAndClose so that Listen is called synchronously to avoid for sure that the client is going to connect to a listening port. `server.Serve(listener)` does exist
 ** Look at implementation style https://github.com/go-httpproxy/httpproxy
 
 * Make the first version usable in production
