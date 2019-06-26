@@ -1,8 +1,9 @@
 package mock_server
 
 import (
-	"net/http/httptest"
 	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -25,6 +26,15 @@ func (mockServer *MockServer) Start() {
 		http.HandlerFunc(
 			func (responseWriter http.ResponseWriter, request *http.Request) {
 				fmt.Println("Received a request at Mock server")
+
+				dump, error := httputil.DumpRequest(request, true)
+				if error != nil {
+					fmt.Println(error)
+					os.Exit(1)
+				}
+				fmt.Println()
+				fmt.Println(string(dump))
+				fmt.Println()
 
 				requestBodyText, error := ioutil.ReadAll(request.Body)
 				if error != nil {

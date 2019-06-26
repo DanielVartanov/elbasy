@@ -64,7 +64,6 @@ func (proxyServer *ProxyServer) makeRequestToServer(request *http.Request) strin
 	fmt.Println("Sending a request from Proxy to Server...")
 
 	transport := &http.Transport{
-		DisableCompression: true,
 		DisableKeepAlives: false,
 		MaxIdleConnsPerHost: 100,
 	}
