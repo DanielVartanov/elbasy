@@ -7,7 +7,6 @@ import (
 	"log"
 	"io"
 	"io/ioutil"
-	"strings"
 )
 
 // proxyToServerConnection
@@ -37,10 +36,12 @@ func (proxyServer *ProxyServer) readReadCloser(readCloser io.ReadCloser) string 
 // do not run yourself (shall we have anoyter type for that?)
 func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	fmt.Println("Received a request at Proxy")
-	requestBodyText := proxyServer.readReadCloser(request.Body)
-	fmt.Printf("  RequestURI = %s, URL = %s, Method = %s, Body = \"%s\"\n", request.RequestURI, request.URL.String(), request.Method, requestBodyText)
 
-	responseFromServer := proxyServer.makeRequestToServer(request.RequestURI, request.Method, requestBodyText)
+	requestCopy := *request
+	requestCopy.RequestURI = ""
+	// requestCopy.Body = strings.NewReader(proxyServer.readReadCloser(request.Body))
+
+	responseFromServer := proxyServer.makeRequestToServer(&requestCopy)
 
 	fmt.Println("Responding to the Client request from Proxy")
 	fmt.Fprintf(responseWriter, responseFromServer)
@@ -59,7 +60,7 @@ func (proxyServer *ProxyServer) Close() {
 	proxyServer.server.Close()
 }
 
-func (proxyServer *ProxyServer) makeRequestToServer(requestURL string, requestMethod string, requestBodyText string) string {
+func (proxyServer *ProxyServer) makeRequestToServer(request *http.Request) string {
 	fmt.Println("Sending a request from Proxy to Server...")
 
 	transport := &http.Transport{
@@ -70,14 +71,8 @@ func (proxyServer *ProxyServer) makeRequestToServer(requestURL string, requestMe
 
 	client := &http.Client{Transport: transport}
 
-	request, error := http.NewRequest(requestMethod, requestURL, strings.NewReader(requestBodyText)) // maybe pass request.Body(io.Reader) instead of reading it in full? Use request.GetBody for debugging purposes in this case
+	response, error := client.Do(request)
 	if error != nil {
-		log.Fatal(error)
-		os.Exit(1)
-	}
-
-	response, err := client.Do(request)
-	if err != nil {
 		log.Fatal(error)
 		os.Exit(1)
 	}

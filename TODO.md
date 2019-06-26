@@ -14,9 +14,9 @@ What to do next
 **** [V] Make the code nice and pleasant to work with
 **** [V] Initiate a connection from a proxy to a server
 **** [V] Read from client, write to server, make a test for it
-***** [ ] Dump requests just to be sure everything is the same
-***** [ ] Write a test that all parts of request get passed to server (just pass entire request except for requestURL)
-****** [ ] Write a test that request URL becomes request path before being sent to server
+***** [ ] Dump requests just to be sure everything is the same https://godoc.org/net/http/httputil#DumpRequest
+***** [V] Write a test that all parts of request get passed to server (just pass entire request except for requestURL)
+****** [V] Write a test that request URL becomes request path before being sent to server
 **** [V] Read from server, write to client
 ***** [ ] Write a test that all parts of response get passed to client (just pass entire response)
 **** Detect server connection closure, close client connection if so (it's not our job to act on Keep-Alive)

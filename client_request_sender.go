@@ -41,14 +41,17 @@ func (self *ClientRequestSender) composeRequestWithBody(requestBodyText string) 
 	return request
 }
 
-func (self *ClientRequestSender) SendRequest(callback func(response *http.Response, responseBodyText string)) {
+func (self *ClientRequestSender) SendRequest(request *http.Request, callback func(response *http.Response, responseBodyText string)) {
 	self.requestsWaitGroup.Add(1)
-	go self.actuallySendRequest(self.composeSimplestRequest(), callback)
+	go self.actuallySendRequest(request, callback)
 }
 
-func (self *ClientRequestSender) SendRequestWithBody(requestBodyText string) { // Just accept http.Request
-	self.requestsWaitGroup.Add(1)
-	go self.actuallySendRequest(self.composeRequestWithBody(requestBodyText), nil)
+func (self *ClientRequestSender) SendSimplestRequest(callback func(response *http.Response, responseBodyText string)) {
+	self.SendRequest(self.composeSimplestRequest(), callback)
+}
+
+func (self *ClientRequestSender) SendRequestWithBody(requestBodyText string) {
+	self.SendRequest(self.composeRequestWithBody(requestBodyText), nil)
 }
 
 func (self *ClientRequestSender) buildHTTPClient() http.Client {
