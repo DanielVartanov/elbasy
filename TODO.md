@@ -20,11 +20,11 @@ What to do next
 **** [V] Read from server, write to client
 ***** [V] Write a test that all parts of response get passed to client (just pass entire response)
 **** Make it local-usage-ready
-***** Make the main func actually run proxy server
-***** Make proxy server dump requests and responses in a log
+***** [V] Make the main func actually run proxy server
+***** [V] Make proxy server dump requests and responses in a log
 ***** Try it with an actual curl (or even browser?)
 *** Refactor it
-**** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
+**** [ ] Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
 **** Make proxy & mock server startup process split into synchronous port binding and asyncrhonous connection handling
 
 // An idea:

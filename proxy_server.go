@@ -6,11 +6,8 @@ import (
 	"net/http"
 	"log"
 	"io"
-	"io/ioutil"
 	"net/http/httputil"
 )
-
-// proxyToServerConnection
 
 type ProxyServer struct {
 	URL string
@@ -24,17 +21,7 @@ func (proxyServer *ProxyServer) Setup() {
 	proxyServer.server = &http.Server{Addr: ":8080", Handler: proxyServer}
 }
 
-func (proxyServer *ProxyServer) readReadCloser(readCloser io.ReadCloser) string {
-	defer readCloser.Close()
-	fullText, error := ioutil.ReadAll(readCloser)
-	if error != nil {
-		fmt.Println(error)
-		os.Exit(1)
-	}
-	return string(fullText)
-}
-
-// do not run yourself (shall we have anoyter type for that?)
+// do not run yourself (shall we have anoyter type for serving ServeHTTP interface?)
 func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	fmt.Println("Received a request at Proxy")
 
