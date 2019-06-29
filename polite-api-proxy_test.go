@@ -4,7 +4,6 @@ import (
 	"testing"
 	"fmt"
 	"net/http"
-	// "time"
 	"strings"
 	"log"
 	"os"
@@ -12,9 +11,9 @@ import (
 	"./mock_server"
 )
 
-func startMockServer() *mock_server.MockServer {
+func startMockServer(responseCompositionFunction func (responseWriter http.ResponseWriter, request *http.Request)) *mock_server.MockServer {
 	var mockServer mock_server.MockServer
-	mockServer.Start()
+	mockServer.Start(responseCompositionFunction)
 	fmt.Println("Mock server is running at " + mockServer.URL)
 	return &mockServer
 }
@@ -26,33 +25,9 @@ func startProxyServer() *ProxyServer {
 	return &proxyServer
 }
 
-func TestServerReceivesBodyFromClient(t *testing.T) {
-	// setup
-
-	mockServer := startMockServer()
-	defer mockServer.Close()
-
-	proxyServer := startProxyServer()
-	defer proxyServer.Close()
-
-	clientRequestSender := ClientRequestSender{
-		ServerURL: mockServer.URL,
-		ProxyURL: proxyServer.URL,
-	}
-
-	// test
-
-	clientRequestSender.SendRequestWithBody("TestServerReceivesBodyFromClient")
-	clientRequestSender.WaitForAllRequests()
-
-	if mockServer.LastRequest.BodyText != "TestServerReceivesBodyFromClient" {
-		t.Error("Unexpected request body at Server: " + mockServer.LastRequest.BodyText)
-	}
-}
-
 func TestServerReceivesAllRequestSectionsFromClient(t *testing.T) {
 	// setup
-	mockServer := startMockServer()
+	mockServer := startMockServer(nil)
 	defer mockServer.Close()
 
 	proxyServer := startProxyServer()
@@ -104,12 +79,12 @@ func TestServerReceivesAllRequestSectionsFromClient(t *testing.T) {
 }
 
 func TestClientReceivesAllResponseSectionsFromServer(t *testing.T) {
-}
-
-
-func TestClientReceivesTheBodyFromServer(t *testing.T) {
 	// setup
-	mockServer := startMockServer()
+	mockServer := startMockServer(func(responseWriter http.ResponseWriter, request *http.Request) {
+		responseWriter.Header().Add("X-Test-Mock-Server", "TestClientReceivesAllResponseSectionsFromServerHeader")
+		responseWriter.WriteHeader(201)
+		fmt.Fprint(responseWriter, "TestClientReceivesAllResponseSectionsFromServerBody")
+	})
 	defer mockServer.Close()
 
 	proxyServer := startProxyServer()
@@ -121,11 +96,25 @@ func TestClientReceivesTheBodyFromServer(t *testing.T) {
 	}
 
 	// test
-	clientRequestSender.SendSimplestRequest(func(_ *http.Response, responseBodyText string) {
-		// Compare ALL fields of Response, including headers and the code!
-		if responseBodyText != "ololo-shmololo\n" {
-			t.Error("Unexpected response body:" + string(responseBodyText))
+	clientRequestSender.SendSimplestRequest(func(response *http.Response, responseBodyText string) {
+
+		if response.Proto != "HTTP/1.1" {
+			t.Error("Protocol versions do not match")
 		}
+
+		if response.StatusCode != 201 {
+			t.Error("Status codes do not match")
+		}
+
+		if response.Header.Get("X-Test-Mock-Server") != "TestClientReceivesAllResponseSectionsFromServerHeader" {
+			t.Error("Headers do not match")
+		}
+
+		if responseBodyText != "TestClientReceivesAllResponseSectionsFromServerBody" {
+			t.Error("Bodies do not match")
+		}
+
+
 	})
 
 	clientRequestSender.WaitForAllRequests()

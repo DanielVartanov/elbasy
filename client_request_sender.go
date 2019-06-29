@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"net/http/httputil"
 )
 
 type ClientRequestSender struct {
@@ -74,14 +73,6 @@ func (self *ClientRequestSender) buildHTTPClient() http.Client {
 
 func (self *ClientRequestSender) actuallySendRequest(request *http.Request, callback func(response *http.Response, responseBodyText string)) {
 	fmt.Println("Sending a client request to the server via the proxy...")
-	dump, error := httputil.DumpRequestOut(request, true)
-	if error != nil {
-		log.Fatal(error)
-		os.Exit(1)
-	}
-	fmt.Println()
-	fmt.Println(string(dump))
-	fmt.Println()
 
 	client := self.buildHTTPClient()
 
@@ -94,6 +85,7 @@ func (self *ClientRequestSender) actuallySendRequest(request *http.Request, call
 	defer response.Body.Close()
 	responseBodyText, error := ioutil.ReadAll(response.Body)
 	if error != nil {
+		fmt.Print("Error reading a response body at Client:")
 		fmt.Println(error)
 		os.Exit(1)
 	}
