@@ -9,23 +9,27 @@ import (
 	"net/http/httputil"
 )
 
+const LEAKY_BUCKET_SIZE = 5
+
 type ProxyServer struct {
 	URL string
 
 	server *http.Server
+	throttler *throttler
 }
 
 func (proxyServer *ProxyServer) Setup() {
 	proxyServer.URL = "http://localhost:8080"
 
 	proxyServer.server = &http.Server{Addr: ":8080", Handler: proxyServer}
+	proxyServer.throttler = NewThrottler(LEAKY_BUCKET_SIZE)
 }
 
 // do not run yourself (shall we have anoyter type for serving ServeHTTP interface?)
 func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	fmt.Println("Received a request at Proxy")
 
-	dump, error := httputil.DumpRequest(request, true)
+	dump, error := httputil.DumpRequest(request, false)
 	if error != nil {
 		log.Fatal(error)
 		os.Exit(1)
@@ -37,9 +41,7 @@ func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, re
 	requestCopy := *request
 	requestCopy.RequestURI = ""
 
-	fmt.Println("Making a request from Proxy to Server")
-
-	dump, error = httputil.DumpRequestOut(&requestCopy, true)
+	dump, error = httputil.DumpRequestOut(&requestCopy, false)
 	if error != nil {
 		log.Fatal(error)
 		os.Exit(1)
@@ -48,11 +50,14 @@ func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, re
 	fmt.Println(string(dump))
 	fmt.Println()
 
-	responseFromServer := proxyServer.makeRequestToServer(&requestCopy)
+	var responseFromServer *http.Response
+	proxyServer.throttler.Throttle(func() {
+		responseFromServer = proxyServer.makeRequestToServer(&requestCopy)
+	})
 
 	fmt.Println("Received a response from Server at Proxy. Relaying it to Client")
 
-	dump, error = httputil.DumpResponse(responseFromServer, true)
+	dump, error = httputil.DumpResponse(responseFromServer, false)
 	if error != nil {
 		fmt.Println(error)
 		os.Exit(1)
