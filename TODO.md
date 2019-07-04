@@ -27,6 +27,10 @@ What to do next
 **** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
 **** Make proxy & mock server startup process split into synchronous port binding and asyncrhonous connection handling
 **** log.Fatal calls os.Exit(1) itself
+**** https://github.com/golang/go/wiki/CodeReviewComments
+**** Actually learn `testing` package, there are MANY useful functions
+**** Read `log` package, what does it provide?
+**** errcheck is a program for checking for unchecked errors in go programs. https://github.com/kisielk/errcheck/
 
 // An idea:
         // ConnState specifies an optional callback function that is
@@ -34,19 +38,52 @@ What to do next
         // ConnState type and associated constants for details.
         http.Server.ConnState func(net.Conn, ConnState)
 
+// bufio.Scanner provides a convenient interface for reading data such as
+// a file of newline-delimited lines of text. Successive calls to
+// the Scan method will step through the 'tokens' of a file, skipping
+// the bytes between the tokens.
+
 *** [V] Implement leaky-bucket algorithm
 **** [V] Make requests wait for quota using a buffered channel and a goroutine which replenishes quota every N milliseconds
 **** Make proxy count quotas depending on... (is the quota per shop or per client ID? Well, does not matter, implement the separation of quotas)
 
 ** [ ] Make it an HTTPS proxy
-*** Read that medium post about hijacking an HTTP(S?) connection via proxy server written in Go
-*** [ ] Make a genuine proxy, have a TCP connection and copy everything back and forth, check it works with curl AND BROWSER
-**** [ ] Try http.Server.Server(net.Listener)
-**** ! [ ] Read actual source code of http.Server to see how it detects and reads HTTP request (response not needed for now) from the connection
-**** [ ] Find HTTP parser inside builtin Go
+*** [V] Read that medium post about hijacking an HTTP(S?) connection via proxy server written in Go
+*** [V] Make a genuine proxy, have a TCP connection and copy everything back and forth,
+**** [V] Check it works with curl
+**** [V] Read actual code of bufio.Reader and Writer, how are they different from the buffer I made myself?
+Conclusion
+! Buffered writer is bad (or you'll have implement a version of Copy/WriteTo manually and do Flush every time yourself. Buffer is not flushed if not pushed by more data to the same Writer)
+! io.Copy seems to be working (but with unbuffered readers/writers!)
+We are reading in large chunks anyway (not in tiny ones, my god, io.Copy buffer is 32kilobytes!) so buffers won't actually reduce amount of actual reads and writes to and from a physical device! Buffers are useless here.
+perhaps EXACTLY because of this buffering many of our attempts have failed (including WriteTo ones)
+
+! Yes, io.Copy on UNBUFFERED  connection readers/writers will work. It actually implements what we have implemented already, but with all thre precautions.
+  Well, at least we know how to debug it. We can just copy its implementation and see in between what's in there. But I believe everything will be fine.
+**** [X] bufio.Reader.WriteTo should actually work
+**** [X] Convert everything to Buffered R/W
+**** [ ] Rescue from errors gracefully
+**** [ ] Check it works with browser
+***** [ ] Make it work with any Host
+**** [V] Read actual source code of http.Server to see how it detects and reads HTTP request (response not needed for now) from the connection
+**** [V] Find HTTP parser inside builtin Go
+
+* Make the implementation clean and responsible
+** Act responsibly on server shutdown
+// Shutdown does not attempt to close nor wait for hijacked
+// connections such as WebSockets. The caller of Shutdown should
+// separately notify such long-lived connections of shutdown and wait
+// for them to close, if desired. See RegisterOnShutdown for a way to
+// register shutdown notification functions.
+** Close clientConn and serverConn
+// After hijacking it becomes the caller's responsibility to manage
+// and close the connection.
+// When do we do it? When the request is over or when server is shutdown?
+// Or we have to read and respect Keep-Alive?
 
 * Try it in production
 ** Find an API we use (PB or Channels or whatever) that supports HTTP
+** (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
 ** Write a letter to devs
 *** It must not become yet another thing to maintain, it must be optimised for fire-and-forget. We (and support) should not know that such thing even exists
 
@@ -55,5 +92,7 @@ What to do next
 ** Make proxy server stop gracefully (use Server.Shutdown(context) instead of Close)
 ** Split ListenAndClose so that Listen is called synchronously to avoid for sure that the client is going to connect to a listening port. `server.Serve(listener)` does exist
 ** Look at implementation style https://github.com/go-httpproxy/httpproxy
+** Look at golang github wiki for coding style guide (sort of, that one))
+
 
 * Question/Research: how early will we need HTTP/2 or even /3? Probably it's a long way until it's mandatory, leave it for now
