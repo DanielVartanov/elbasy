@@ -51,7 +51,7 @@ func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, re
 	_, err := clientConn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 	if err != nil { log.Fatal(err) }
 
-	serverConn, error := net.Dial("tcp", "google.com:443")
+	serverConn, error := net.Dial("tcp", request.Host)
 	if error != nil { log.Fatal(error) }
 	fmt.Println("Connected to a remote Server. Starting to relay data")
 

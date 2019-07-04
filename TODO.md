@@ -62,9 +62,8 @@ perhaps EXACTLY because of this buffering many of our attempts have failed (incl
   Well, at least we know how to debug it. We can just copy its implementation and see in between what's in there. But I believe everything will be fine.
 **** [X] bufio.Reader.WriteTo should actually work
 **** [X] Convert everything to Buffered R/W
-**** [ ] Rescue from errors gracefully
-**** [ ] Check it works with browser
-***** [ ] Make it work with any Host
+**** [V] Check it works with browser
+***** [V] Make it work with any Host
 **** [V] Read actual source code of http.Server to see how it detects and reads HTTP request (response not needed for now) from the connection
 **** [V] Find HTTP parser inside builtin Go
 
@@ -88,6 +87,7 @@ perhaps EXACTLY because of this buffering many of our attempts have failed (incl
 *** It must not become yet another thing to maintain, it must be optimised for fire-and-forget. We (and support) should not know that such thing even exists
 
 * Make the first version presentable at a meetup/conference
+** Wait, client should connect to the proxy via its own TLS as well, shouldn't it? Implement it!
 ** Make mock server stop gracefully (stop it over a quit-channel?)
 ** Make proxy server stop gracefully (use Server.Shutdown(context) instead of Close)
 ** Split ListenAndClose so that Listen is called synchronously to avoid for sure that the client is going to connect to a listening port. `server.Serve(listener)` does exist
