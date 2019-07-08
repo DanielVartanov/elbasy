@@ -2,83 +2,93 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"net/http"
 	"log"
 	"net/http/httputil"
 	"net"
-	"time"
-	"io"
 )
+
+type FakeListener struct {
+	connections chan net.Conn
+	addr net.Addr
+}
+
+func NewFakeListener(addr net.Addr) *FakeListener {
+	return &FakeListener{connections: make(chan net.Conn), addr: addr}
+}
+
+func (fl *FakeListener) Connect(conn net.Conn) {
+	fl.connections <- conn
+}
+
+func (fl *FakeListener) Accept() (net.Conn, error) {
+	conn := <-fl.connections
+	return conn, nil
+}
+
+func (fl *FakeListener) Close() error {
+	return nil // Should pass `shut this thing down` to another channel so that Accept() unblocks with an error
+}
+
+func (fl *FakeListener) Addr() net.Addr {
+	return fl.addr
+}
 
 const LEAKY_BUCKET_SIZE = 5
 
 type ProxyServer struct {
-	URL string
-
-	server *http.Server
-	throttler *throttler
+	listener net.Listener
+	server http.Server
+	fakeListener *FakeListener
 }
 
-func (proxyServer *ProxyServer) Setup() {
-	proxyServer.URL = "http://localhost:8080"
-
-	proxyServer.server = &http.Server{Addr: ":8080", Handler: proxyServer}
-	proxyServer.throttler = NewThrottler(LEAKY_BUCKET_SIZE)
-}
-
-// TODO shall we have anoyter type for serving ServeHTTP interface?
-func (proxyServer *ProxyServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
-	fmt.Println("Received a request at Proxy")
-
+func serveHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	dump, error := httputil.DumpRequest(request, false)
-	if error != nil {
-		log.Fatal(error)
-		os.Exit(1)
-	}
+	if error != nil { log.Fatal("httputil.DumpRequest()", error)  }
 	fmt.Println()
 	fmt.Println(string(dump))
-	fmt.Println()
 
-	hijacker := responseWriter.(http.Hijacker)
-	clientConn, _, error := hijacker.Hijack()
-	if error != nil { log.Fatal(error) }
+	responseWriter.WriteHeader(200)
+	fmt.Println(responseWriter.Write([]byte("Hello, TLS world\n")))
+}
 
-	error = clientConn.SetDeadline(time.Time{}) // Reset read/write deadlines which might have been set previously
-	if error != nil { log.Fatal(error) }
+func (proxyServer *ProxyServer) BindToPort() {
+	proxyServer.server = http.Server{Handler: http.HandlerFunc(serveHTTP)}
 
-	fmt.Println("Connection is hijacked. Acknowledging the proxy to client")
-	_, err := clientConn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-	if err != nil { log.Fatal(err) }
+	listener, err := net.Listen("tcp", ":8443")
+	proxyServer.listener = listener
+	if err != nil { log.Fatal("Error on net.Listen", err) }
+	fmt.Println("Listening at " + listener.Addr().String())
 
-	serverConn, error := net.Dial("tcp", request.Host)
-	if error != nil { log.Fatal(error) }
-	fmt.Println("Connected to a remote Server. Starting to relay data")
+	proxyServer.fakeListener = NewFakeListener(listener.Addr())
+}
 
-	go func() {
-		written, err := io.Copy(serverConn, clientConn)
-		if err != nil { log.Fatal(err) }
-		fmt.Println("io.Copy(serverConn, clientConn) has written", written, "bytes")
+func (proxyServer *ProxyServer) AcceptConnections() {
+	go func(){
+		for {
+			conn, err := proxyServer.listener.Accept()
+			if err != nil { log.Fatal("Error on listener.Accept()", err) }
+			proxyServer.fakeListener.Connect(conn)
+		}
 	}()
 
-	go func() {
-		written, err := io.Copy(clientConn, serverConn)
-		if err != nil { log.Fatal(err) }
-		fmt.Println("io.Copy(clientConn, serverConn) has written", written, "bytes")
-	}()
+	err := proxyServer.server.ServeTLS(proxyServer.fakeListener,
+		"/home/daniel/src/polite-api-proxy/localhost.crt",
+		"/home/daniel/src/polite-api-proxy/localhost.key")
+	if err != http.ErrServerClosed { log.Fatal("Error in http.Server.ServeTLS() ", err) }
 }
 
 func (proxyServer *ProxyServer) Run() {
-	fmt.Println("Proxy server is running at " + proxyServer.URL)
-	error := proxyServer.server.ListenAndServe()
-	if error != http.ErrServerClosed {
-		log.Fatal("Error in ProxyServer.Run(): ")
-		log.Fatal(error)
-		os.Exit(1)
-	}
+	proxyServer.BindToPort()
+	proxyServer.AcceptConnections()
 }
 
 func (proxyServer *ProxyServer) Close() {
 	fmt.Println("Stopping a Proxy server")
-	proxyServer.server.Close() // TODO: should be Shutdown() (or not?)
+
+	error :=  proxyServer.listener.Close()
+	if error != nil { log.Fatal("Error on listener.Close()", error) }
+
+	error = proxyServer.server.Close() // TODO: should be Shutdown() (or not?)
+	if error != nil { log.Fatal("Error on server.Close()", error) }
 }
