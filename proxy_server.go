@@ -8,29 +8,29 @@ import (
 	"net"
 )
 
-type FakeListener struct {
+type ArtificialListener struct {
 	connections chan net.Conn
 	addr net.Addr
 }
 
-func NewFakeListener(addr net.Addr) *FakeListener {
-	return &FakeListener{connections: make(chan net.Conn), addr: addr}
+func NewArtificialListener(addr net.Addr) *ArtificialListener {
+	return &ArtificialListener{connections: make(chan net.Conn), addr: addr}
 }
 
-func (fl *FakeListener) Connect(conn net.Conn) {
+func (fl *ArtificialListener) Connect(conn net.Conn) {
 	fl.connections <- conn
 }
 
-func (fl *FakeListener) Accept() (net.Conn, error) {
+func (fl *ArtificialListener) Accept() (net.Conn, error) {
 	conn := <-fl.connections
 	return conn, nil
 }
 
-func (fl *FakeListener) Close() error {
+func (fl *ArtificialListener) Close() error {
 	return nil // Should pass `shut this thing down` to another channel so that Accept() unblocks with an error
 }
 
-func (fl *FakeListener) Addr() net.Addr {
+func (fl *ArtificialListener) Addr() net.Addr {
 	return fl.addr
 }
 
@@ -39,7 +39,7 @@ const LEAKY_BUCKET_SIZE = 5
 type ProxyServer struct {
 	listener net.Listener
 	server http.Server
-	fakeListener *FakeListener
+	artificialListener *ArtificialListener
 }
 
 func serveHTTP(responseWriter http.ResponseWriter, request *http.Request) {
@@ -60,7 +60,7 @@ func (proxyServer *ProxyServer) BindToPort() {
 	if err != nil { log.Fatal("Error on net.Listen", err) }
 	fmt.Println("Listening at " + listener.Addr().String())
 
-	proxyServer.fakeListener = NewFakeListener(listener.Addr())
+	proxyServer.artificialListener = NewArtificialListener(listener.Addr())
 }
 
 func (proxyServer *ProxyServer) AcceptConnections() {
@@ -68,11 +68,11 @@ func (proxyServer *ProxyServer) AcceptConnections() {
 		for {
 			conn, err := proxyServer.listener.Accept()
 			if err != nil { log.Fatal("Error on listener.Accept()", err) }
-			proxyServer.fakeListener.Connect(conn)
+			proxyServer.artificialListener.Connect(conn)
 		}
 	}()
 
-	err := proxyServer.server.ServeTLS(proxyServer.fakeListener,
+	err := proxyServer.server.ServeTLS(proxyServer.artificialListener,
 		"/home/daniel/src/polite-api-proxy/localhost.crt",
 		"/home/daniel/src/polite-api-proxy/localhost.key")
 	if err != http.ErrServerClosed { log.Fatal("Error in http.Server.ServeTLS() ", err) }
