@@ -64,15 +64,17 @@ What to do next
 * Make it minimally production ready
 ** [V] Generate Shopify certificate
 ** [V] Find a proper api key and try to make a request, look at quota headers, see what happens when quota is exceeded
-** Make the proxy to be a genuine proxy if a request does not match a certicate url
-** Make sure clients will *not* go via proxy if they send a http request
-** Figure out what is their throttling model and whether they provide current quota via headers
+** [V] Before you forget how to do it, write an instruction on how to generate and install a CA certificate and how to generate elbasy certificates for Shopify
+** [ ] Make the proxy to be a genuine proxy if a request does not match a certicate url
+** [ ] Make sure clients will *not* go via proxy if they send a http request
+** [ ] Find out whether Shopify quota is per client or per store
+*** [ ] Make the throttler act upon that
 ** [V] Implement the model
 ** Write automated tests for that
 ** (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
 ** Write a letter to devs
 *** It must not become yet another thing to maintain, it must be optimised for fire-and-forget. We (and support) should not know that such thing even exists
-** Make the implementation clean and responsible (so that it is not scary to restart it)
+** [ ] Make the implementation clean and responsible (so that it is not scary to restart it, i.e. it does not break exising connections etc)
 *** Act responsibly on server shutdown
 // Shutdown does not attempt to close nor wait for hijacked
 // connections such as WebSockets. The caller of Shutdown should
@@ -84,7 +86,7 @@ What to do next
 // and close the connection.
 // When do we do it? When the request is over or when server is shutdown?
 // Or we have to read and respect Keep-Alive?
-
+** [ ] Make it not fail on error
 
 * Make the first version presentable at a meetup/conference
 ** Wait, client should connect to the proxy via its own TLS as well, shouldn't it? Implement it!
