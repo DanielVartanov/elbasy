@@ -11,6 +11,7 @@ import (
 type ElbasyServer struct {
 	server http.Server
 	artificialListener *ArtificialListener
+	throttler *throttler
 }
 
 func NewElbasyServer() *ElbasyServer {
@@ -18,6 +19,7 @@ func NewElbasyServer() *ElbasyServer {
 
 	es.server = http.Server{Handler: http.HandlerFunc(es.generateServeHTTPFunc())}
 	es.artificialListener = NewArtificialListener()
+	es.throttler = NewThrottler()
 
 	go es.startTLSServer()
 
@@ -39,8 +41,8 @@ func (es *ElbasyServer) Close() {
 
 func (es *ElbasyServer) startTLSServer() {
 	err := es.server.ServeTLS(es.artificialListener,
-		"/home/daniel/_wildcard.google.com.pem",
-		"/home/daniel/_wildcard.google.com-key.pem")
+		"/home/daniel/src/polite-api-proxy/elbasy_certificates/_wildcard.myshopify.com.pem",
+		"/home/daniel/src/polite-api-proxy/elbasy_certificates/_wildcard.myshopify.com-key.pem")
 	if err != http.ErrServerClosed { log.Fatal("Error in http.Server.ServeTLS() ", err) }
 }
 
@@ -83,9 +85,9 @@ func (es *ElbasyServer) relayServerResponseToClient(responseWriter http.Response
 
 func (es *ElbasyServer) generateServeHTTPFunc() func(responseWriter http.ResponseWriter, request *http.Request) {
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
-		// waitForQuota
-		responseFromServer := es.makeRequestToServer(request)
-		es.relayServerResponseToClient(responseWriter, responseFromServer)
-
+		es.throttler.Throttle(func(){
+			responseFromServer := es.makeRequestToServer(request)
+			es.relayServerResponseToClient(responseWriter, responseFromServer)
+		})
 	}
 }

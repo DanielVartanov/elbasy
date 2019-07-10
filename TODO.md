@@ -23,14 +23,15 @@ What to do next
 ***** [V] Make the main func actually run proxy server
 ***** [V] Make proxy server dump requests and responses in a log
 ***** [V] Try it with an actual curl (or even browser?)
-*** Refactor it
-**** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
-**** Make proxy & mock server startup process split into synchronous port binding and asyncrhonous connection handling
-**** [V] log.Fatal calls os.Exit(1) itself
-**** https://github.com/golang/go/wiki/CodeReviewComments
-**** Actually learn `testing` package, there are MANY useful functions
-**** Read `log` package, what does it provide?
-**** errcheck is a program for checking for unchecked errors in go programs. https://github.com/kisielk/errcheck/
+
+** Refactor it
+*** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
+*** Make proxy & mock server startup process split into synchronous port binding and asyncrhonous connection handling
+*** [V] log.Fatal calls os.Exit(1) itself
+*** https://github.com/golang/go/wiki/CodeReviewComments
+*** Actually learn `testing` package, there are MANY useful functions
+*** Read `log` package, what does it provide?
+*** errcheck is a program for checking for unchecked errors in go programs. https://github.com/kisielk/errcheck/
 
 *** [V] Implement leaky-bucket algorithm
 **** [V] Make requests wait for quota using a buffered channel and a goroutine which replenishes quota every N milliseconds
@@ -60,8 +61,14 @@ What to do next
 *** [X] Test TLS server with `openssl` command line tool
 *** [V] Second-order server should be one per host. You set them up in advance (on startup), make them load the certs and their listeners' Accept() functions only do `return <-connectionsChannnnel`, where the channel gets populated by the proxy server as soon as we hijack a connection
 
-* Make it production ready
-** Generate walmart certificate
+* Make it minimally production ready
+** [V] Generate Shopify certificate
+** [V] Find a proper api key and try to make a request, look at quota headers, see what happens when quota is exceeded
+** Make the proxy to be a genuine proxy if a request does not match a certicate url
+** Make sure clients will *not* go via proxy if they send a http request
+** Figure out what is their throttling model and whether they provide current quota via headers
+** [V] Implement the model
+** Write automated tests for that
 ** (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
 ** Write a letter to devs
 *** It must not become yet another thing to maintain, it must be optimised for fire-and-forget. We (and support) should not know that such thing even exists

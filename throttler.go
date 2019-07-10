@@ -5,37 +5,37 @@ import (
 	"time"
 )
 
-type throttler struct {
-	BucketSize int
+const SHOPIFY_LEAKY_BUCKET_SIZE = 40
+const SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND = 2
 
-	leakyBucketQuota chan int8
+type throttler struct {
+	bucketSize int
+	leakRatePerSecond int
+	quotaTrackingChannel chan int8
 }
 
-func NewThrottler(bucketSize int) *throttler{
+func NewThrottler() *throttler{
 	instance := new(throttler)
-	instance.BucketSize = bucketSize
-	instance.leakyBucketQuota = make(chan int8, instance.channelSize())
+	instance.bucketSize = SHOPIFY_LEAKY_BUCKET_SIZE
+	instance.leakRatePerSecond = SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND
+	instance.quotaTrackingChannel = make(chan int8, instance.channelSize())
 	instance.initialise()
 	return instance
 }
 
 func (self *throttler) Throttle(action func()) {
-	log.Println("[Throttler] Waiting for quota")
-	<- self.leakyBucketQuota
-	log.Println("[Throttler] Quota is given. Performing an action")
+	start := time.Now()
+	<- self.quotaTrackingChannel
+	log.Printf("[Throttler] Waiting for quota took %s", time.Since(start))
 	action()
-	log.Println("[Throttler] Action is done")
 }
 
 func (self *throttler) initialise() {
-	for i := 1; i <= self.channelSize(); i++ {
-		self.leakyBucketQuota <- 1
-	}
-
 	go func() {
 		for {
-			self.leakyBucketQuota <- 1
-			log.Println("[Throttler] Time has passed, released a quota")
+			for i := 1; i <= SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND; i++ {
+				self.quotaTrackingChannel <- 1
+			}
 			time.Sleep(1 * time.Second)
 		}
 	}()
@@ -48,5 +48,5 @@ If the bucket is empty, then the emptier is ready to add one piece of quota any 
 So in case of a burst of requests of the size of LEAKY_BUCKET_SIZE, the bucket will be filled, _immediately_ the emptier will add 1 quota and all requests of the count of LEAKY_BUCKET_SIZE will pass through, but the very next one will wait for the cooldown.
 */
 
-	return self.BucketSize - 1
+	return self.bucketSize - SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND
 }
