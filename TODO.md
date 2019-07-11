@@ -65,11 +65,13 @@ What to do next
 ** [V] Generate Shopify certificate
 ** [V] Find a proper api key and try to make a request, look at quota headers, see what happens when quota is exceeded
 ** [V] Before you forget how to do it, write an instruction on how to generate and install a CA certificate and how to generate elbasy certificates for Shopify
-** [ ] Make the proxy to be a genuine proxy if a request does not match a certicate url
-** [ ] Make sure clients will *not* go via proxy if they send a http request
-** [ ] Find out whether Shopify quota is per client or per store
-*** [ ] Make the throttler act upon that
+** [V] Make the proxy to be a genuine proxy if a request does not match a certicate url
+** [V] Make sure clients will *not* go via proxy if they send a http request
+** Confirm that Shopify quota is per store, not per client
+** [ ] Make the throttler apply limits per a store
 ** [V] Implement the model
+** Generate certificates and keys which lasts 2 years
+** Organise a change of certificates in 1.5 years
 ** Write automated tests for that
 ** (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
 ** Write a letter to devs
@@ -87,8 +89,18 @@ What to do next
 // When do we do it? When the request is over or when server is shutdown?
 // Or we have to read and respect Keep-Alive?
 ** [ ] Make it not fail on error
+** [ ] Make it detect and log quota exceedings
+
+* Nice-to-have's
+** Print waiting-for-quota times into log and plot a logarithmic graphs from that plot
+
+* Make it usable by the general public
+** Should we make certificates regeneation anyhow automatic?
 
 * Make the first version presentable at a meetup/conference
+** Rename ElbasyServer to ImpostorServer, elbasy_certificates to impostor_certificates, entire project to elbasy
+** Write an extensive README/instructions
+** Test all the installation instructions in a wild with someone who needs it
 ** Wait, client should connect to the proxy via its own TLS as well, shouldn't it? Implement it!
 ** Make mock server stop gracefully (stop it over a quit-channel?)
 ** Make proxy server stop gracefully (use Server.Shutdown(context) instead of Close)
@@ -96,6 +108,5 @@ What to do next
 ** Look at implementation style https://github.com/go-httpproxy/httpproxy
 ** Look at golang github wiki for coding style guide (sort of, that one))
 ** Ask _around_ what are the best practices to make a software product for sysops: CMD tools best practices, containers, instructions support etc?
-
 
 * Question/Research: how early will we need HTTP/2 or even /3? Probably it's a long way until it's mandatory, leave it for now

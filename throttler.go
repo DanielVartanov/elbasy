@@ -46,6 +46,8 @@ func (self *throttler) channelSize() int {
 Why the channel is of size of LEAKY_BUCKET_SIZE - 1?
 If the bucket is empty, then the emptier is ready to add one piece of quota any time
 So in case of a burst of requests of the size of LEAKY_BUCKET_SIZE, the bucket will be filled, _immediately_ the emptier will add 1 quota and all requests of the count of LEAKY_BUCKET_SIZE will pass through, but the very next one will wait for the cooldown.
+
+It is now `- LEAK_RATE` rather than `- 1`, but you got the idea.
 */
 
 	return self.bucketSize - SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND

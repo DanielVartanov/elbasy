@@ -6,12 +6,14 @@ import (
 	"net"
 	"net/http"
 	"time"
+	"strings"
 )
 
 type ProxyServer struct {
 	elbasyServer *ElbasyServer
 	server http.Server
 	listener net.Listener
+	genuineProxy GenuineProxy
 }
 
 func (ps *ProxyServer) BindToPort() {
@@ -64,12 +66,19 @@ func (ps *ProxyServer) acknowledgeProxyToClient(clientConn net.Conn) {
 	if err != nil { log.Fatal(err) }
 }
 
+func (ps *ProxyServer) isHostShopify(host string) bool {
+	return strings.HasSuffix(host, ".myshopify.com")
+}
+
 func (ps *ProxyServer) generateServeHTTPFunc() func(responseWriter http.ResponseWriter, request *http.Request) {
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
 		clientConn := ps.hijackConnection(responseWriter)
-
 		ps.acknowledgeProxyToClient(clientConn)
 
-		ps.elbasyServer.HandleConnection(clientConn)
+		if ps.isHostShopify(request.Host) {
+			ps.elbasyServer.HandleConnection(clientConn)
+		} else {
+			ps.genuineProxy.HandleConnection(clientConn, request.Host)
+		}
 	}
 }
