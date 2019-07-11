@@ -87,6 +87,9 @@ func (es *ElbasyServer) generateServeHTTPFunc() func(responseWriter http.Respons
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
 		es.throttler.Throttle(request.Host, func(){
 			responseFromServer := es.makeRequestToServer(request)
+			if responseFromServer.Status == "429 Too Many Requests" {
+				log.Println("Received '429 Too Many Requests' from", request.Host)
+			}
 			es.relayServerResponseToClient(responseWriter, responseFromServer)
 		})
 	}

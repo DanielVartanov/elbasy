@@ -70,13 +70,26 @@ What to do next
 ** Confirm that Shopify quota is per store, not per client
 ** [V] Make the throttler apply limits per a store
 ** [V] Implement the model
-** Generate certificates and keys which lasts 2 years
-** Organise a change of certificates in 1.5 years
-** Write automated tests for that
-** (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
 ** Write a letter to devs
 *** It must not become yet another thing to maintain, it must be optimised for fire-and-forget. We (and support) should not know that such thing even exists
-** [ ] Make the implementation clean and responsible (so that it is not scary to restart it, i.e. it does not break exising connections etc)
+** [ ] Make it not fail on error
+*** (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
+** [V] Make it detect and log quota exceedings
+** Check it on a reallt big amount of requests. I have a suspicioun they don't get parallelised
+** Make it deployable
+*** Read the best practices
+*** Make it compilable
+*** Make a binary
+** Generate certificates and keys which lasts 2 years
+** Organise a change of certificates in 1.5 years
+
+
+* What to do next
+** Print waiting-for-quota times into log and plot a logarithmic graphs from that plot
+** Write automated tests for that
+** Make it not scary to restart, i.e. it does not break exising connections etc
+*** React to C-C and another C-C
+**** First one causes proxyServer.Shutdown which in its turn causes everything else
 *** Act responsibly on server shutdown
 // Shutdown does not attempt to close nor wait for hijacked
 // connections such as WebSockets. The caller of Shutdown should
@@ -88,11 +101,7 @@ What to do next
 // and close the connection.
 // When do we do it? When the request is over or when server is shutdown?
 // Or we have to read and respect Keep-Alive?
-** [ ] Make it not fail on error
-** [ ] Make it detect and log quota exceedings
-
-* Nice-to-have's
-** Print waiting-for-quota times into log and plot a logarithmic graphs from that plot
+** Log amount of currently-being-handled requests into log every second and (use waitgroup?) and plot a graph of it at monitoring
 
 * Make it usable by the general public
 ** Should we make certificates regeneation anyhow automatic?
