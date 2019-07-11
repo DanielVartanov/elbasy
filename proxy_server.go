@@ -75,7 +75,7 @@ func (ps *ProxyServer) generateServeHTTPFunc() func(responseWriter http.Response
 		clientConn := ps.hijackConnection(responseWriter)
 		ps.acknowledgeProxyToClient(clientConn)
 
-		if ps.isHostShopify(request.Host) {
+		if ps.isHostShopify(request.URL.Hostname()) {
 			ps.elbasyServer.HandleConnection(clientConn)
 		} else {
 			ps.genuineProxy.HandleConnection(clientConn, request.Host)

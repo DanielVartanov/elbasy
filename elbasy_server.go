@@ -85,7 +85,7 @@ func (es *ElbasyServer) relayServerResponseToClient(responseWriter http.Response
 
 func (es *ElbasyServer) generateServeHTTPFunc() func(responseWriter http.ResponseWriter, request *http.Request) {
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
-		es.throttler.Throttle(func(){
+		es.throttler.Throttle(request.Host, func(){
 			responseFromServer := es.makeRequestToServer(request)
 			es.relayServerResponseToClient(responseWriter, responseFromServer)
 		})

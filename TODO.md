@@ -68,7 +68,7 @@ What to do next
 ** [V] Make the proxy to be a genuine proxy if a request does not match a certicate url
 ** [V] Make sure clients will *not* go via proxy if they send a http request
 ** Confirm that Shopify quota is per store, not per client
-** [ ] Make the throttler apply limits per a store
+** [V] Make the throttler apply limits per a store
 ** [V] Implement the model
 ** Generate certificates and keys which lasts 2 years
 ** Organise a change of certificates in 1.5 years

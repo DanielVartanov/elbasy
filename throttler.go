@@ -11,34 +11,51 @@ const SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND = 2
 type throttler struct {
 	bucketSize int
 	leakRatePerSecond int
-	quotaTrackingChannel chan int8
+	storeQuotas map[string]*storeQuota
 }
 
 func NewThrottler() *throttler{
 	instance := new(throttler)
 	instance.bucketSize = SHOPIFY_LEAKY_BUCKET_SIZE
 	instance.leakRatePerSecond = SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND
-	instance.quotaTrackingChannel = make(chan int8, instance.channelSize())
-	instance.initialise()
+	instance.storeQuotas = make(map[string]*storeQuota)
 	return instance
 }
 
-func (self *throttler) Throttle(action func()) {
-	start := time.Now()
-	<- self.quotaTrackingChannel
-	log.Printf("[Throttler] Waiting for quota took %s", time.Since(start))
-	action()
+type storeQuota struct {
+	quotaTrackingChannel chan int8
 }
 
-func (self *throttler) initialise() {
+func newStoreQuota(bucketSize int, leakRatePerSecon int) *storeQuota {
+	quotaTrackingChannel := make(chan int8, bucketSize)
+
 	go func() {
 		for {
-			for i := 1; i <= SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND; i++ {
-				self.quotaTrackingChannel <- 1
+			for i := 1; i <= leakRatePerSecon; i++ {
+				quotaTrackingChannel <- 1
 			}
 			time.Sleep(1 * time.Second)
 		}
 	}()
+
+	return &storeQuota{quotaTrackingChannel: quotaTrackingChannel}
+}
+
+func (self *throttler) Throttle(store string, action func()) {
+	storeQuota := self.fetchOrInitStoreQuota(store)
+
+	start := time.Now()
+	<- storeQuota.quotaTrackingChannel
+	log.Printf("[Throttler] Waiting for quota took %s", time.Since(start))
+	action()
+}
+
+func (self *throttler) fetchOrInitStoreQuota(store string) *storeQuota {
+	if self.storeQuotas[store] == nil {
+		self.storeQuotas[store] = newStoreQuota(self.channelSize(), SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND)
+	}
+
+	return self.storeQuotas[store]
 }
 
 func (self *throttler) channelSize() int {
