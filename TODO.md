@@ -5,7 +5,7 @@ What to do next
 ** Make a transparent proxy
 *** Quickly google how exactly HTTP (without TLS) supports proxying
 
-*** Write the simplest proxy
+*** [V] Write the simplest proxy
 **** [V] Bind to a TCP port (which one by convention?)
 **** [V] Accept client connections
 **** [V] Write tests for it (faster development further! No need to run curls etc)
@@ -24,18 +24,9 @@ What to do next
 ***** [V] Make proxy server dump requests and responses in a log
 ***** [V] Try it with an actual curl (or even browser?)
 
-** Refactor it
-*** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
-*** Make proxy & mock server startup process split into synchronous port binding and asyncrhonous connection handling
-*** [V] log.Fatal calls os.Exit(1) itself
-*** https://github.com/golang/go/wiki/CodeReviewComments
-*** Actually learn `testing` package, there are MANY useful functions
-*** Read `log` package, what does it provide?
-*** errcheck is a program for checking for unchecked errors in go programs. https://github.com/kisielk/errcheck/
-
 *** [V] Implement leaky-bucket algorithm
 **** [V] Make requests wait for quota using a buffered channel and a goroutine which replenishes quota every N milliseconds
-**** Make proxy count quotas depending on... (is the quota per shop or per client ID? Well, does not matter, implement the separation of quotas)
+**** [V] Make proxy count quotas depending on... (is the quota per shop or per client ID? Well, does not matter, implement the separation of quotas)
 
 ** [V] Make it an HTTPS proxy
 *** [V] Read that medium post about hijacking an HTTP(S?) connection via proxy server written in Go
@@ -56,7 +47,7 @@ What to do next
 **** [V] Test it with `curl --insecure`
 *** [V] Generate elbasyCertificate upon the certificate received from the remote server https://github.com/FiloSottile/mkcert
 **** [X] Only public key is to be changes (possibly an algorithm too). Make sure it is clear for a human that the certificate is forged
-**** Pre-forge all the certs for supported APIs in advance? Or change them regularly?
+**** [V] Pre-forge all the certs for supported APIs in advance? Or change them regularly?
 *** [V] Try to make it so that you only give the TLS-related code the cert and don't do any other crypto yourself
 *** [X] Test TLS server with `openssl` command line tool
 *** [V] Second-order server should be one per host. You set them up in advance (on startup), make them load the certs and their listeners' Accept() functions only do `return <-connectionsChannnnel`, where the channel gets populated by the proxy server as soon as we hijack a connection
@@ -70,19 +61,20 @@ What to do next
 ** Confirm that Shopify quota is per store, not per client
 ** [V] Make the throttler apply limits per a store
 ** [V] Implement the model
-** Write a letter to devs
-*** It must not become yet another thing to maintain, it must be optimised for fire-and-forget. We (and support) should not know that such thing even exists
-** [ ] Make it not fail on error
-*** (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
+** [V] Make it not fail on error
+*** [V] (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
 ** [V] Make it detect and log quota exceedings
-** Check it on a reallt big amount of requests. I have a suspicioun they don't get parallelised
+** [ ] Check it on a reallt big amount of requests. I have a suspicioun they don't get parallelised
+** Present it to fellow devs
+*** [ ] Prepare a demo with multiple requests to Shopify
 ** Make it deployable
 *** Read the best practices
 *** Make it compilable
 *** Make a binary
-** Generate certificates and keys which lasts 2 years
-** Organise a change of certificates in 1.5 years
+*** Generate certificates and keys which lasts 2 years
 
+** Organise a change of certificates in 1.5 years
+** [V] Create an alert for `429 Too Many Requests` in logs
 
 * What to do next
 ** Print waiting-for-quota times into log and plot a logarithmic graphs from that plot
@@ -90,6 +82,7 @@ What to do next
 ** Make it not scary to restart, i.e. it does not break exising connections etc
 *** React to C-C and another C-C
 **** First one causes proxyServer.Shutdown which in its turn causes everything else
+*** Use http.Server.Shutdown instead of http.Server.Close everywhere
 *** Act responsibly on server shutdown
 // Shutdown does not attempt to close nor wait for hijacked
 // connections such as WebSockets. The caller of Shutdown should
@@ -103,10 +96,23 @@ What to do next
 // Or we have to read and respect Keep-Alive?
 ** Log amount of currently-being-handled requests into log every second and (use waitgroup?) and plot a graph of it at monitoring
 
+** Refactor it
+*** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
+*** Make proxy & mock server startup process split into synchronous port binding and asyncrhonous connection handling
+*** [V] log.Fatal calls os.Exit(1) itself
+*** https://github.com/golang/go/wiki/CodeReviewComments
+*** Actually learn `testing` package, there are MANY useful functions
+https://codesamplez.com/development/golang-unit-testing
+*** Read `log` package, what does it provide?
+*** errcheck is a program for checking for unchecked errors in go programs. https://github.com/kisielk/errcheck/
+
 * Make it usable by the general public
 ** Should we make certificates regeneation anyhow automatic?
 
 * Make the first version presentable at a meetup/conference
+** [X] Make Client<->Proxy connection secure as well, it must have a certificate and use ServeTLS
+*** Make it optional as Client-Proxy connection in some infras are totally inside a local network
+*** Moreover, what to steal there? Server domain names? Everything else is secured anyway
 ** Rename ElbasyServer to ImpostorServer, elbasy_certificates to impostor_certificates, entire project to elbasy
 ** Write an extensive README/instructions
 ** Test all the installation instructions in a wild with someone who needs it

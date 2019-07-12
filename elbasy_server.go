@@ -21,7 +21,12 @@ func NewElbasyServer() *ElbasyServer {
 	es.artificialListener = NewArtificialListener()
 	es.throttler = NewThrottler()
 
-	go es.startTLSServer()
+	go func() {
+		err := es.startTLSServer()
+		if err != nil {
+			log.Fatalf("Error ElbasyServer.startTLSServer(): %v", err)
+		}
+	}()
 
 	return es
 }
@@ -30,20 +35,27 @@ func (es *ElbasyServer) HandleConnection(conn net.Conn) {
 	es.artificialListener.Connect(conn)
 }
 
-func (es *ElbasyServer) Close() {
-	fmt.Println("Stopping Elbasy server")
-
+func (es *ElbasyServer) Close() error {
 	err := es.server.Close() // TODO: should be Shutdown() (or not?)
-	if err != nil { log.Fatal("Error on server.Close()", err) }
+	if err != nil {
+		return fmt.Errorf("ElbasyServer.server.Close(): %v", err)
+	} else {
+		return nil
+	}
 }
 
 // --- Private ---
 
-func (es *ElbasyServer) startTLSServer() {
+func (es *ElbasyServer) startTLSServer() error {
 	err := es.server.ServeTLS(es.artificialListener,
 		"/home/daniel/src/polite-api-proxy/elbasy_certificates/_wildcard.myshopify.com.pem",
 		"/home/daniel/src/polite-api-proxy/elbasy_certificates/_wildcard.myshopify.com-key.pem")
-	if err != http.ErrServerClosed { log.Fatal("Error in http.Server.ServeTLS() ", err) }
+
+	if err != http.ErrServerClosed {
+		return fmt.Errorf("ElbasyServer.server.ServeTLS(): %v", err)
+	} else {
+		return nil
+	}
 }
 
 func (es *ElbasyServer) composeRequestToServerFromClientRequest(clientRequest *http.Request) http.Request {
@@ -54,7 +66,7 @@ func (es *ElbasyServer) composeRequestToServerFromClientRequest(clientRequest *h
 	return requestToServer
 }
 
-func (es *ElbasyServer) makeRequestToServer(requestFromClient *http.Request) *http.Response {
+func (es *ElbasyServer) makeRequestToServer(requestFromClient *http.Request) (*http.Response, error) {
 	requestToServer := es.composeRequestToServerFromClientRequest(requestFromClient)
 
 	transport := &http.Transport{
@@ -63,13 +75,15 @@ func (es *ElbasyServer) makeRequestToServer(requestFromClient *http.Request) *ht
 	}
 	client := &http.Client{Transport: transport}
 
-	responseFromServer, error := client.Do(&requestToServer)
-	if error != nil { log.Fatal(error) }
-
-	return responseFromServer
+	responseFromServer, err := client.Do(&requestToServer)
+	if err != nil {
+		return nil, fmt.Errorf("http.Client.Do(): %v", err)
+	} else {
+		return responseFromServer, nil
+	}
 }
 
-func (es *ElbasyServer) relayServerResponseToClient(responseWriter http.ResponseWriter, responseFromServer *http.Response) {
+func (es *ElbasyServer) relayServerResponseToClient(responseWriter http.ResponseWriter, responseFromServer *http.Response) error {
 	for headerKey, _ := range responseFromServer.Header {
 		responseWriter.Header().Set(
 			headerKey,
@@ -80,17 +94,32 @@ func (es *ElbasyServer) relayServerResponseToClient(responseWriter http.Response
 	responseWriter.WriteHeader(responseFromServer.StatusCode)
 
 	_, err := io.Copy(responseWriter, responseFromServer.Body)
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		return fmt.Errorf("io.Copy(): %v", err)
+	} else {
+		return nil
+	}
 }
 
 func (es *ElbasyServer) generateServeHTTPFunc() func(responseWriter http.ResponseWriter, request *http.Request) {
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
 		es.throttler.Throttle(request.Host, func(){
-			responseFromServer := es.makeRequestToServer(request)
-			if responseFromServer.Status == "429 Too Many Requests" {
-				log.Println("Received '429 Too Many Requests' from", request.Host)
+			responseFromServer, err := es.makeRequestToServer(request)
+			if err != nil {
+				log.Printf("Error on sending request to Server from Proxy: %v", err)
+				http.Error(responseWriter, "Error sending a request to Server", 500)
+				return
 			}
-			es.relayServerResponseToClient(responseWriter, responseFromServer)
+
+			if responseFromServer.Status == "429 Too Many Requests" {
+				log.Print("Received '429 Too Many Requests' from ", request.Host)
+			}
+
+			err = es.relayServerResponseToClient(responseWriter, responseFromServer)
+			if err != nil {
+				log.Printf("Error relaying a Server response from Proxy to Client: %v", err)
+				http.Error(responseWriter, "Error relaying a Server response from Proxy to Client", 500)
+			}
 		})
 	}
 }
