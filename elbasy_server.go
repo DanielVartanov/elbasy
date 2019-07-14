@@ -7,19 +7,20 @@ import (
 	"net"
 	"io"
 	"./artificial_listener"
+	"./anti_throttlers"
 )
 
 type ElbasyServer struct {
 	server http.Server
 	connectionFeeder artificial_listener.ConnectionFeeder
-	throttler *throttler
+	antiThrottler anti_throttlers.AntiThrottler
 }
 
 func NewElbasyServer() *ElbasyServer {
 	es := &ElbasyServer{}
 
 	es.server = http.Server{Handler: http.HandlerFunc(es.generateServeHTTPFunc())}
-	es.throttler = NewThrottler()
+	es.antiThrottler = anti_throttlers.NewShopifyAntiThrottler()
 
 	artificialListener, connectionFeeder := artificial_listener.NewArtificialListener()
 	es.connectionFeeder = connectionFeeder
@@ -106,7 +107,7 @@ func (es *ElbasyServer) relayServerResponseToClient(responseWriter http.Response
 
 func (es *ElbasyServer) generateServeHTTPFunc() func(responseWriter http.ResponseWriter, request *http.Request) {
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
-		es.throttler.Throttle(request.Host, func(){
+		es.antiThrottler.PreventThrottling(request.Host, func(){
 			responseFromServer, err := es.makeRequestToServer(request)
 			if err != nil {
 				log.Printf("Error on sending request to Server from Proxy: %v", err)

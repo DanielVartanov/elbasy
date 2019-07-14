@@ -95,6 +95,10 @@ What to do next
 // When do we do it? When the request is over or when server is shutdown?
 // Or we have to read and respect Keep-Alive?
 ** Log amount of currently-being-handled requests into log every second and (use waitgroup?) and plot a graph of it at monitoring
+** When 429 is dicovered (probably due to requests made outside proxy) do an emergency bucket drain
+** Implement next throttling models
+*** ClaimQuota should return `interface{}` -- a token (even a function if a counter wants so) to identify an exact request
+**** I bet it is easier to just accept `action func()` than to deal with tokens
 
 ** Refactor it
 *** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
