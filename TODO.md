@@ -64,7 +64,7 @@ What to do next
 ** [V] Make it not fail on error
 *** [V] (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
 ** [V] Make it detect and log quota exceedings
-** [ ] Check it on a reallt big amount of requests. I have a suspicioun they don't get parallelised
+** [V] Check it on a reallt big amount of requests. I have a suspicioun they don't get parallelised
 ** Present it to fellow devs
 *** [ ] Prepare a demo with multiple requests to Shopify
 ** Make it deployable

@@ -6,11 +6,12 @@ import (
 	"log"
 	"net"
 	"io"
+	"./artificial_listener"
 )
 
 type ElbasyServer struct {
 	server http.Server
-	artificialListener *ArtificialListener
+	connectionFeeder artificial_listener.ConnectionFeeder
 	throttler *throttler
 }
 
@@ -18,11 +19,13 @@ func NewElbasyServer() *ElbasyServer {
 	es := &ElbasyServer{}
 
 	es.server = http.Server{Handler: http.HandlerFunc(es.generateServeHTTPFunc())}
-	es.artificialListener = NewArtificialListener()
 	es.throttler = NewThrottler()
 
+	artificialListener, connectionFeeder := artificial_listener.NewArtificialListener()
+	es.connectionFeeder = connectionFeeder
+
 	go func() {
-		err := es.startTLSServer()
+		err := es.startTLSServer(artificialListener)
 		if err != nil {
 			log.Fatalf("Error ElbasyServer.startTLSServer(): %v", err)
 		}
@@ -32,7 +35,7 @@ func NewElbasyServer() *ElbasyServer {
 }
 
 func (es *ElbasyServer) HandleConnection(conn net.Conn) {
-	es.artificialListener.Connect(conn)
+	es.connectionFeeder.Feed(conn)
 }
 
 func (es *ElbasyServer) Close() error {
@@ -46,8 +49,8 @@ func (es *ElbasyServer) Close() error {
 
 // --- Private ---
 
-func (es *ElbasyServer) startTLSServer() error {
-	err := es.server.ServeTLS(es.artificialListener,
+func (es *ElbasyServer) startTLSServer(artificialListener net.Listener) error {
+	err := es.server.ServeTLS(artificialListener,
 		"/home/daniel/src/polite-api-proxy/elbasy_certificates/_wildcard.myshopify.com.pem",
 		"/home/daniel/src/polite-api-proxy/elbasy_certificates/_wildcard.myshopify.com-key.pem")
 
