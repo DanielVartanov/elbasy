@@ -27,7 +27,7 @@ func (al artificialListener) Accept() (net.Conn, error) {
 }
 
 func (al artificialListener) Close() error {
-	return nil // Should pass `shut this thing down` to another channel so that Accept() unblocks with an error
+	return nil // TODO: Should pass `shut this thing down` to another channel so that Accept() unblocks with an error
 }
 
 func (al artificialListener) Addr() net.Addr {
