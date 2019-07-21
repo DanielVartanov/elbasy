@@ -1,6 +1,8 @@
 Elbasy
 ======
 
+A secure proxy which prevents throttling when talking to remote APIs
+
 Installation and deployment
 ---------------------------
 
@@ -24,3 +26,6 @@ Certificates and keys will be put into the current directory
 Note: never leave a key to a root CA certificate on a production machine
 
 3.2. Copy leaf certificates _and their keys_ in a subdirectory `./impostor_certificates` next to `elbasy` binary
+
+
+Sponsored by [Veeqo](https://github.com/veeqo)
