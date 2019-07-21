@@ -1,10 +1,9 @@
 What to do next
 ================
 
-* Make the first version runnable locally but fully working
-** Make a transparent proxy
-*** Quickly google how exactly HTTP (without TLS) supports proxying
-
+* [V] Make the first version runnable locally but fully working
+** [V] Make a non-transparent proxy
+*** [V] Quickly google how exactly HTTP (without TLS) supports proxying
 *** [V] Write the simplest proxy
 **** [V] Bind to a TCP port (which one by convention?)
 **** [V] Accept client connections
@@ -52,7 +51,7 @@ What to do next
 *** [X] Test TLS server with `openssl` command line tool
 *** [V] Second-order server should be one per host. You set them up in advance (on startup), make them load the certs and their listeners' Accept() functions only do `return <-connectionsChannnnel`, where the channel gets populated by the proxy server as soon as we hijack a connection
 
-* Make it minimally production ready
+* [ ] Make it minimally production ready
 ** [V] Generate Shopify certificate
 ** [V] Find a proper api key and try to make a request, look at quota headers, see what happens when quota is exceeded
 ** [V] Before you forget how to do it, write an instruction on how to generate and install a CA certificate and how to generate elbasy certificates for Shopify
@@ -65,16 +64,27 @@ What to do next
 *** [V] (read/find out/ask/google first what is the best practice) Rescue from errors more gracefully (definitely don't log.Fatal/os.Exit every time)
 ** [V] Make it detect and log quota exceedings
 ** [V] Check it on a reallt big amount of requests. I have a suspicioun they don't get parallelised
-** Present it to fellow devs
-*** [ ] Prepare a demo with multiple requests to Shopify
+** [V] Present it to fellow devs
+*** [V] Prepare a demo with multiple requests to Shopify
 ** Make it deployable
 *** Read the best practices
-*** Make it compilable
-*** Make a binary
-*** Generate certificates and keys which lasts 2 years
-
+*** [V] Make it compilable
+*** [V] Make a binary
+*** Make an automated deployment procedure at Travis
+*** Generate and install certificates
+**** Figure out for how long a root certificatge and a leaf certificate can last in practice
+**** Generate a root certificate with Andrew and leave it with him to store the key very secretly
+**** Andrew is to inject the root certificate into the image of every instance (or only to Etsy workers if it is even possible)
 ** Organise a change of certificates in 1.5 years
 ** [V] Create an alert for `429 Too Many Requests` in logs
+** Think of and make more metrics
+*** Difference between calculated quota and quota received in a response Header
+** [ ] Add support for Etsy.com
+** [ ] Cover it with tests
+*** [ ] Tests for proxying entire requests and responses correctly from client to server and back
+*** Tests for closing connections
+*** Tests for actual throttling prevention
+** [V] Rename ElbasyServer to ImpostorServer, elbasy_certificates to impostor_certificates, entire project to elbasy
 
 * What to do next
 ** Print waiting-for-quota times into log and plot a logarithmic graphs from that plot
@@ -102,7 +112,7 @@ What to do next
 
 ** Refactor it
 *** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
-*** Make proxy & mock server startup process split into synchronous port binding and asyncrhonous connection handling
+*** [V] Make proxy & mock server startup process split into synchronous port binding and asyncrhonous connection handling
 *** [V] log.Fatal calls os.Exit(1) itself
 *** https://github.com/golang/go/wiki/CodeReviewComments
 *** Actually learn `testing` package, there are MANY useful functions
@@ -117,7 +127,6 @@ https://codesamplez.com/development/golang-unit-testing
 ** [X] Make Client<->Proxy connection secure as well, it must have a certificate and use ServeTLS
 *** Make it optional as Client-Proxy connection in some infras are totally inside a local network
 *** Moreover, what to steal there? Server domain names? Everything else is secured anyway
-** Rename ElbasyServer to ImpostorServer, elbasy_certificates to impostor_certificates, entire project to elbasy
 ** Write an extensive README/instructions
 ** Test all the installation instructions in a wild with someone who needs it
 ** Wait, client should connect to the proxy via its own TLS as well, shouldn't it? Implement it!

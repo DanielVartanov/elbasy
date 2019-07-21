@@ -1,4 +1,4 @@
-package main
+package genuine_proxy
 
 import (
 	"net"

@@ -1,4 +1,4 @@
-package main
+package proxy_server
 
 import (
 	"fmt"
@@ -7,13 +7,15 @@ import (
 	"net/http"
 	"time"
 	"strings"
+	"./impostor_server"
+	"./genuine_proxy"
 )
 
 type ProxyServer struct {
-	elbasyServer *ElbasyServer
+	impostorServer *impostor_server.ImpostorServer
 	server http.Server
 	listener net.Listener
-	genuineProxy GenuineProxy
+	genuineProxy genuine_proxy.GenuineProxy
 }
 
 func (ps *ProxyServer) BindToPort() error {
@@ -25,7 +27,7 @@ func (ps *ProxyServer) BindToPort() error {
 	log.Print("Listening at " + listener.Addr().String())
 
 	ps.server = http.Server{Handler: http.HandlerFunc(ps.generateServeHTTPFunc())}
-	ps.elbasyServer = NewElbasyServer()
+	ps.impostorServer = impostor_server.NewImpostorServer()
 
 	return nil
 }
@@ -65,9 +67,9 @@ func (ps *ProxyServer) Close() error {
 		return fmt.Errorf("ProxyServer.server.Close(): %v", err)
 	}
 
-	err = ps.elbasyServer.Close()
+	err = ps.impostorServer.Close()
 	if err != nil {
-		return fmt.Errorf("ProxyServer.elbasyServer.Close(): %v", err)
+		return fmt.Errorf("ProxyServer.impostorServer.Close(): %v", err)
 	}
 
 	return nil
@@ -117,7 +119,7 @@ func (ps *ProxyServer) generateServeHTTPFunc() func(responseWriter http.Response
 		}
 
 		if ps.isHostShopify(request.URL.Hostname()) {
-			ps.elbasyServer.HandleConnection(clientConn)
+			ps.impostorServer.HandleConnection(clientConn)
 		} else {
 			err = ps.genuineProxy.HandleConnection(clientConn, request.Host)
 			if err != nil {

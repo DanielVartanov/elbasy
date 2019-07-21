@@ -1,5 +1,7 @@
 package main
 
+// Idea: use httptest.ResponseRecorders
+/*
 import (
 	"testing"
 	"fmt"
@@ -10,6 +12,7 @@ import (
 
 	"./mock_server"
 )
+
 
 func startMockServer(responseCompositionFunction func (responseWriter http.ResponseWriter, request *http.Request)) *mock_server.MockServer {
 	var mockServer mock_server.MockServer
@@ -119,3 +122,4 @@ func TestClientReceivesAllResponseSectionsFromServer(t *testing.T) {
 
 	clientRequestSender.WaitForAllRequests()
 }
+*/

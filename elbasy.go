@@ -2,10 +2,11 @@ package main
 
 import (
 	"log"
+	"./proxy_server"
 )
 
 func main() {
-	var proxyServer ProxyServer
+	var proxyServer proxy_server.ProxyServer
 	err := proxyServer.Run()
 	if err != nil {
 		log.Fatalf("Error ProxyServer.Run(): %v", err)

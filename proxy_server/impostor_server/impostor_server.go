@@ -1,4 +1,4 @@
-package main
+package impostor_server
 
 import (
 	"fmt"
@@ -10,39 +10,39 @@ import (
 	"./anti_throttlers"
 )
 
-type ElbasyServer struct {
+type ImpostorServer struct {
 	server http.Server
 	connectionFeeder artificial_listener.ConnectionFeeder
 	antiThrottler anti_throttlers.AntiThrottler
 }
 
-func NewElbasyServer() *ElbasyServer {
-	es := &ElbasyServer{}
+func NewImpostorServer() *ImpostorServer {
+	is := &ImpostorServer{}
 
-	es.server = http.Server{Handler: http.HandlerFunc(es.generateServeHTTPFunc())}
-	es.antiThrottler = anti_throttlers.NewShopifyAntiThrottler()
+	is.server = http.Server{Handler: http.HandlerFunc(is.generateServeHTTPFunc())}
+	is.antiThrottler = anti_throttlers.NewShopifyAntiThrottler()
 
 	artificialListener, connectionFeeder := artificial_listener.NewArtificialListener()
-	es.connectionFeeder = connectionFeeder
+	is.connectionFeeder = connectionFeeder
 
 	go func() {
-		err := es.startTLSServer(artificialListener)
+		err := is.startTLSServer(artificialListener)
 		if err != nil {
-			log.Fatalf("Error ElbasyServer.startTLSServer(): %v", err)
+			log.Fatalf("Error ImpostorServer.startTLSServer(): %v", err)
 		}
 	}()
 
-	return es
+	return is
 }
 
-func (es *ElbasyServer) HandleConnection(conn net.Conn) {
-	es.connectionFeeder.Feed(conn)
+func (is *ImpostorServer) HandleConnection(conn net.Conn) {
+	is.connectionFeeder.Feed(conn)
 }
 
-func (es *ElbasyServer) Close() error {
-	err := es.server.Close() // TODO: should be Shutdown() (or not?)
+func (is *ImpostorServer) Close() error {
+	err := is.server.Close() // TODO: should be Shutdown() (or not?)
 	if err != nil {
-		return fmt.Errorf("ElbasyServer.server.Close(): %v", err)
+		return fmt.Errorf("ImpostorServer.server.Close(): %v", err)
 	} else {
 		return nil
 	}
@@ -50,19 +50,19 @@ func (es *ElbasyServer) Close() error {
 
 // --- Private ---
 
-func (es *ElbasyServer) startTLSServer(artificialListener net.Listener) error {
-	err := es.server.ServeTLS(artificialListener,
-		"/home/daniel/src/polite-api-proxy/elbasy_certificates/_wildcard.myshopify.com.pem",
-		"/home/daniel/src/polite-api-proxy/elbasy_certificates/_wildcard.myshopify.com-key.pem")
+func (is *ImpostorServer) startTLSServer(artificialListener net.Listener) error {
+	err := is.server.ServeTLS(artificialListener,
+		"./elbasy_certificates/_wildcard.myshopify.com.pem",
+		"./elbasy_certificates/_wildcard.myshopify.com-key.pem")
 
 	if err != http.ErrServerClosed {
-		return fmt.Errorf("ElbasyServer.server.ServeTLS(): %v", err)
+		return fmt.Errorf("ImpostorServer.server.ServeTLS(): %v", err)
 	} else {
 		return nil
 	}
 }
 
-func (es *ElbasyServer) composeRequestToServerFromClientRequest(clientRequest *http.Request) http.Request {
+func (is *ImpostorServer) composeRequestToServerFromClientRequest(clientRequest *http.Request) http.Request {
 	requestToServer := *clientRequest
 	requestToServer.RequestURI = ""
 	requestToServer.URL.Scheme = "https"
@@ -70,8 +70,8 @@ func (es *ElbasyServer) composeRequestToServerFromClientRequest(clientRequest *h
 	return requestToServer
 }
 
-func (es *ElbasyServer) makeRequestToServer(requestFromClient *http.Request) (*http.Response, error) {
-	requestToServer := es.composeRequestToServerFromClientRequest(requestFromClient)
+func (is *ImpostorServer) makeRequestToServer(requestFromClient *http.Request) (*http.Response, error) {
+	requestToServer := is.composeRequestToServerFromClientRequest(requestFromClient)
 
 	transport := &http.Transport{
 		DisableKeepAlives: false,
@@ -87,7 +87,7 @@ func (es *ElbasyServer) makeRequestToServer(requestFromClient *http.Request) (*h
 	}
 }
 
-func (es *ElbasyServer) relayServerResponseToClient(responseWriter http.ResponseWriter, responseFromServer *http.Response) error {
+func (is *ImpostorServer) relayServerResponseToClient(responseWriter http.ResponseWriter, responseFromServer *http.Response) error {
 	for headerKey, _ := range responseFromServer.Header {
 		responseWriter.Header().Set(
 			headerKey,
@@ -105,10 +105,10 @@ func (es *ElbasyServer) relayServerResponseToClient(responseWriter http.Response
 	}
 }
 
-func (es *ElbasyServer) generateServeHTTPFunc() func(responseWriter http.ResponseWriter, request *http.Request) {
+func (is *ImpostorServer) generateServeHTTPFunc() func(responseWriter http.ResponseWriter, request *http.Request) {
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
-		es.antiThrottler.PreventThrottling(request.Host, func(){
-			responseFromServer, err := es.makeRequestToServer(request)
+		is.antiThrottler.PreventThrottling(request.Host, func(){
+			responseFromServer, err := is.makeRequestToServer(request)
 			if err != nil {
 				log.Printf("Error on sending request to Server from Proxy: %v", err)
 				http.Error(responseWriter, "Error sending a request to Server", 500)
@@ -119,7 +119,7 @@ func (es *ElbasyServer) generateServeHTTPFunc() func(responseWriter http.Respons
 				log.Print("Received '429 Too Many Requests' from ", request.Host)
 			}
 
-			err = es.relayServerResponseToClient(responseWriter, responseFromServer)
+			err = is.relayServerResponseToClient(responseWriter, responseFromServer)
 			if err != nil {
 				log.Printf("Error relaying a Server response from Proxy to Client: %v", err)
 				http.Error(responseWriter, "Error relaying a Server response from Proxy to Client", 500)
