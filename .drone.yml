@@ -3,7 +3,7 @@ kind: pipeline
 name: default
 
 steps:
-- name: Run Tests
+- name: test
   image: golang:1.12
   commands:
   - go test ./...
