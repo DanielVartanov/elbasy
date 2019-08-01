@@ -1,0 +1,14 @@
+---
+kind: pipeline
+name: default
+
+steps:
+- name: test
+  image: golang:1.12
+  commands:
+  - go test ./...
+
+services:
+- name: docker
+  image: docker:18.09-dind
+  privileged: true
