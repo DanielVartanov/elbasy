@@ -67,7 +67,7 @@ What to do next
 ** [V] Present it to fellow devs
 *** [V] Prepare a demo with multiple requests to Shopify
 ** Make it deployable
-*** Read the best practices
+*** [V] Read the best practices
 *** [V] Make it compilable
 *** [V] Make a binary
 *** Make an automated deployment procedure at Travis
@@ -80,13 +80,39 @@ What to do next
 ** Think of and make more metrics
 *** Difference between calculated quota and quota received in a response Header
 ** [ ] Add support for Etsy.com
+*** [ ] Test up to its limits
 ** [ ] Cover it with tests
 *** [ ] Tests for proxying entire requests and responses correctly from client to server and back
+
+How to test if client sends and server receives the same request: hijack connections at mock server and compare entire strings!
+
+test when not throttled
+   it copies from client to server
+   it copies from server to client
+   test many requests just go through without delay (meausre time and state it is less than a second, we measure time throttling tests anyway)
+
+test when throttled
+   it copies from client to server
+   it copies from server to client
+   test throttling per se
+     make a special testing server with whatever rules you want and test all supported models
+
+   Opinion: no need to measure a delay. It is enough to measure time whithin which all requests reach the mockServer and fuzzily compare it to a target time
+
 *** Tests for closing connections
 *** Tests for actual throttling prevention
+*** Tests for detecting significant differenence between calculated and actual quota (test it with 7 requests at once)
 ** [V] Rename ElbasyServer to ImpostorServer, elbasy_certificates to impostor_certificates, entire project to elbasy
+** Shutdown gracefully on SIGTERM
+** Test it with race detectors https://blog.golang.org/race-detector
+
+* [ ] Make it fire-and-forgettable
+** [V] Update directory structure and switch to go1.13+
 
 * What to do next
+** There should be a hardcoded list of supported APIs, i.e. those throttlnig properties of which are known and reverse-engineered. A database of API throttling rules.
+*** Those properties are: Detection of the API, throttling rules, reading the quota account, reading the current quota, detecting that quota is exceeded
+*** Configuration only sets out those which are used in the particular installation
 ** Print waiting-for-quota times into log and plot a logarithmic graphs from that plot
 ** Make CI do benchmarks, even if irrelevant to production they will still show sudden or gradual slowdowns
 ** Write automated tests for that
@@ -113,6 +139,7 @@ What to do next
 
 ** Refactor it
 *** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
+*** Convert all underscore and hyphen based identifiers/names to camel case as the latter apparently _is_ GoLang convention
 *** [V] Make proxy & mock server startup process split into synchronous port binding and asyncrhonous connection handling
 *** [V] log.Fatal calls os.Exit(1) itself
 *** https://github.com/golang/go/wiki/CodeReviewComments
