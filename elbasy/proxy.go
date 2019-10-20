@@ -14,12 +14,12 @@ type proxy struct {
 	listener net.Listener
 
 	mitm *mitmConnHandler
-	regular *regularConnHandler
+	regularProxy *regularProxyConnHandler
 }
 
 func newProxy() *proxy {
 	var px proxy
-	px.regular = newRegularConnHandler()
+	px.regularProxy = newRegularProxyConnHandler()
 	px.mitm = newMitmConnHandler()
 	px.server = http.Server{Handler: px}
 	return &px
@@ -70,9 +70,9 @@ func (px *proxy) close() error {
 		return fmt.Errorf("proxy.server.Close(): %v", err)
 	}
 
-	err = px.regular.close()
+	err = px.regularProxy.close()
 	if err != nil {
-		return fmt.Errorf("proxy.regular.Close(): %v", err)
+		return fmt.Errorf("proxy.regularProxy.Close(): %v", err)
 	}
 
 	err = px.mitm.close()
@@ -96,9 +96,9 @@ func (px proxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.Requ
 		http.Error(responseWriter, "Error handling request", 500)
 	}
 
-	err = px.acknowledgeproxyToClient(clientConn)
+	err = px.acknowledgeProxyToClient(clientConn)
 	if err != nil {
-		log.Printf("Error proxy.acknowledgeproxyToClient(): %v", err)
+		log.Printf("Error proxy.acknowledgeProxyToClient(): %v", err)
 		http.Error(responseWriter, "Error handling request", 500)
 	}
 
@@ -125,7 +125,7 @@ func (px *proxy) hijackConnection(responseWriter http.ResponseWriter) (net.Conn,
 	return clientConn, nil
 }
 
-func (px *proxy) acknowledgeproxyToClient(c net.Conn) error {
+func (px *proxy) acknowledgeProxyToClient(c net.Conn) error {
 	_, err := c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 	if err != nil {
 		return fmt.Errorf("net.Conn.Write(): %v", err)
@@ -137,6 +137,6 @@ func (px *proxy) chooseConnHandler(host string) connHandler {
 	if strings.HasSuffix(host, ".myshopify.com") {
 		return px.mitm
 	} else {
-		return px.regular
+		return px.regularProxy
 	}
 }

@@ -7,13 +7,13 @@ import (
 	"log"
 )
 
-type regularConnHandler struct {}
+type regularProxyConnHandler struct {}
 
-func newRegularConnHandler() *regularConnHandler {
-	return &regularConnHandler{}
+func newRegularProxyConnHandler() *regularProxyConnHandler {
+	return &regularProxyConnHandler{}
 }
 
-func (_ *regularConnHandler) handleConnection(clientConn net.Conn, remoteHost string) error {
+func (_ *regularProxyConnHandler) handleConnection(clientConn net.Conn, remoteHost string) error {
 	serverConn, err := net.Dial("tcp", remoteHost)
 	if err != nil {
 		return fmt.Errorf("net.Dial: %v", err)
@@ -37,6 +37,6 @@ func (_ *regularConnHandler) handleConnection(clientConn net.Conn, remoteHost st
 	return nil
 }
 
-func (_ *regularConnHandler) close() error {
+func (_ *regularProxyConnHandler) close() error {
 	return nil
 }
