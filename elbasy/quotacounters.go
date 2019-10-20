@@ -1,4 +1,4 @@
-package anti_throttlers
+package main
 
 import (
 	"time"

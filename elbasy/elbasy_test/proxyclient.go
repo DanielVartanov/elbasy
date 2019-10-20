@@ -1,4 +1,4 @@
-package main
+package elbasy_test
 
 import (
 	"net/url"

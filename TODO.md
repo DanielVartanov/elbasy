@@ -88,6 +88,7 @@ What to do next
 
 * What to do next
 ** Print waiting-for-quota times into log and plot a logarithmic graphs from that plot
+** Make CI do benchmarks, even if irrelevant to production they will still show sudden or gradual slowdowns
 ** Write automated tests for that
 ** Make it not scary to restart, i.e. it does not break exising connections etc
 *** React to C-C and another C-C

@@ -1,4 +1,4 @@
-package artificial_listener
+package fakelistener
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 func TestItFeedsAConnection(t *testing.T) {
 	_, wantedConn := net.Pipe()
 
-	listener, feeder := NewArtificialListener()
+	listener, feeder := NewFakeListener()
 
 	go func(){ feeder.Feed(wantedConn) }()
 	gotConn, err := listener.Accept()
@@ -25,7 +25,7 @@ func TestItFeedsAConnection(t *testing.T) {
 func TestAsItIsIntendedToBeUsedInReality(t *testing.T) {
 	clientConn, serverConn := net.Pipe()
 
-	listener, feeder := NewArtificialListener()
+	listener, feeder := NewFakeListener()
 
 	wantMsg := "3.141592"
 	waitCh := make(chan int)

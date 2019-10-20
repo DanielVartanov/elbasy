@@ -1,4 +1,4 @@
-package mock_server
+package elbasy_test
 
 import (
 	"net/http"

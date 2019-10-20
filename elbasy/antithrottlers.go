@@ -1,18 +1,14 @@
-package anti_throttlers
+package main
 
 import (
 	"log"
 	"time"
 )
 
-type AntiThrottler interface {
-	PreventThrottling(quotaAccount string, action func())
-}
-
 const SHOPIFY_LEAKY_BUCKET_SIZE = 40
 const SHOPIFY_LEAKY_BUCKET_LEAK_RATE_PER_SECOND = 2
 
-func NewShopifyAntiThrottler() AntiThrottler{
+func newShopifyAntiThrottler() antiThrottler{
 	return antiThrottler{
 		quotaCounter: newLeakyBucket(
 			SHOPIFY_LEAKY_BUCKET_SIZE,
@@ -25,7 +21,7 @@ type antiThrottler struct {
 	quotaCounter quotaCounter
 }
 
-func (ath antiThrottler) PreventThrottling(quotaAccount string, action func()) {
+func (ath antiThrottler) preventThrottling(quotaAccount string, action func()) {
 	logElapsedTimeAsMetric("quota.claim_waiting_time", func() {
 		ath.quotaCounter.ClaimQuota(quotaAccount)
 	})
