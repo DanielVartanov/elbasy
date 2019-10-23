@@ -13,6 +13,8 @@ import (
 
 type proxy struct {
 	address string
+	tlsCertFile string
+	tlsKeyFile string
 	server http.Server
 	listener net.Listener
 	mitm *mitmConnHandler
@@ -48,7 +50,7 @@ func (px *proxy) acceptConnections() error {
 		return fmt.Errorf("listener is empty, run bindToPort() first")
 	}
 
-	px.server = http.Server{handler: px.handlerFunc()}
+	px.server = http.Server{Handler: px.handlerFunc()}
 	err := px.server.ServeTLS(px.listener, px.tlsCertFile, px.tlsKeyFile)
 	if err != http.ErrServerClosed {
 		return fmt.Errorf("proxy.server.Serve(): %v", err)
@@ -90,31 +92,31 @@ func (px *proxy) close() error {
 	return nil
 }
 
-// --- Private ---
-
 type connHandler interface {
 	handleConnection(c net.Conn, host string) error
 }
 
-func (px proxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
-	clientConn, err := px.hijackConnection(responseWriter)
-	if err != nil {
-		log.Printf("Error hijacking connection: %v\n", err)
-		http.Error(responseWriter, "Error handling request", 500)
-	}
+func (px proxy) handlerFunc() http.HandlerFunc {
+	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		clientConn, err := px.hijackConnection(responseWriter)
+		if err != nil {
+			log.Printf("Error hijacking connection: %v\n", err)
+			http.Error(responseWriter, "Error handling request", 500)
+		}
 
-	err = px.acknowledgeProxyToClient(clientConn)
-	if err != nil {
-		log.Printf("Error proxy.acknowledgeProxyToClient(): %v", err)
-		http.Error(responseWriter, "Error handling request", 500)
-	}
+		err = px.acknowledgeProxyToClient(clientConn)
+		if err != nil {
+			log.Printf("Error proxy.acknowledgeProxyToClient(): %v", err)
+			http.Error(responseWriter, "Error handling request", 500)
+		}
 
-	connHandler := px.chooseConnHandler(request.URL.Hostname())
-	err = connHandler.handleConnection(clientConn, request.Host)
-	if err != nil {
-		log.Printf("Error connHandler.HandleConnection(): %v\n", err)
-		http.Error(responseWriter, "Error handling request", 500)
-	}
+		connHandler := px.chooseConnHandler(request.URL.Hostname())
+		err = connHandler.handleConnection(clientConn, request.Host)
+		if err != nil {
+			log.Printf("Error connHandler.HandleConnection(): %v\n", err)
+			http.Error(responseWriter, "Error handling request", 500)
+		}
+	})
 }
 
 func (px *proxy) hijackConnection(responseWriter http.ResponseWriter) (net.Conn, error) {
