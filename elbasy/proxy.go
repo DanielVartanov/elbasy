@@ -62,14 +62,7 @@ func (px *proxy) run() error {
 }
 
 func (px *proxy) close() error {
-	log.Println("Stopping a proxy server")
-
-	err :=  px.listener.Close()
-	if err != nil {
-		return fmt.Errorf("proxy.listener.Close(): %v", err)
-	}
-
-	err = px.server.Close()
+	err := px.server.Close()
 	if err != nil {
 		return fmt.Errorf("proxy.server.Close(): %v", err)
 	}
