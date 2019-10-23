@@ -36,6 +36,10 @@ func (px *proxy) bindToPort() error {
 }
 
 func (px *proxy) acceptConnections() error {
+	if px.listener == nil {
+		return fmt.Errorf("listener is empty, run bindToPort() first")
+	}
+
 	err := px.server.Serve(px.listener)
 	if err != http.ErrServerClosed {
 		return fmt.Errorf("proxy.server.Serve(): %v", err)
