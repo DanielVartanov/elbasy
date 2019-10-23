@@ -21,7 +21,7 @@ func NewServer(host string, port int, tlsCertFile, tlsKeyFile string) *Server {
 	return &Server{
 		address: host + ":" + strconv.Itoa(port),
 		tlsCertFile: tlsCertFile,
-		tlsKeyFile: tlsKeyFile
+		tlsKeyFile: tlsKeyFile,
 	}
 }
 
