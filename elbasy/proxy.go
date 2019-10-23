@@ -7,31 +7,39 @@ import (
 	"net/http"
 	"time"
 	"strings"
+	"strconv"
+	"net/url"
 )
 
 type proxy struct {
+	address string
 	server http.Server
 	listener net.Listener
-
 	mitm *mitmConnHandler
 	regularProxy *regularProxyConnHandler
 }
 
-func newProxy() *proxy {
-	var px proxy
-	px.regularProxy = newRegularProxyConnHandler()
-	px.mitm = newMitmConnHandler()
-	px.server = http.Server{Handler: px}
-	return &px
+func newProxy(host string, port int, tlsCertFile, tlsKeyFile string) *proxy {
+	return &proxy{
+		address: host + ":" + strconv.Itoa(port),
+		tlsCertFile: tlsCertFile,
+		tlsKeyFile: tlsKeyFile,
+		regularProxy: newRegularProxyConnHandler(),
+		mitm: newMitmConnHandler(),
+	}
+}
+
+func (px *proxy) url() *url.URL {
+	return &url.URL{Scheme: "https", Host: px.address}
 }
 
 func (px *proxy) bindToPort() error {
-	listener, err := net.Listen("tcp", ":8080")
+	listener, err := net.Listen("tcp", px.address)
 	if err != nil {
 		return fmt.Errorf("net.Listen: %v", err)
 	}
 	px.listener = listener
-	log.Print("Listening at " + px.listener.Addr().String())
+
 	return nil
 }
 
@@ -40,10 +48,12 @@ func (px *proxy) acceptConnections() error {
 		return fmt.Errorf("listener is empty, run bindToPort() first")
 	}
 
-	err := px.server.Serve(px.listener)
+	px.server = http.Server{handler: px.handlerFunc()}
+	err := px.server.ServeTLS(px.listener, px.tlsCertFile, px.tlsKeyFile)
 	if err != http.ErrServerClosed {
 		return fmt.Errorf("proxy.server.Serve(): %v", err)
 	}
+
 	return nil
 }
 
