@@ -9,19 +9,28 @@ import (
 )
 
 type Server struct {
-	Port int
-
+	address string
+	tlsCertFile string
+	tlsKeyFile string
 	httpsrv http.Server
 	listener net.Listener
 	onRequestHandler http.HandlerFunc
 }
 
+func NewServer(host string, port int, tlsCertFile, tlsKeyFile string) *Server {
+	return &Server{
+		address: host + ":" + strconv.Itoa(port),
+		tlsCertFile: tlsCertFile,
+		tlsKeyFile: tlsKeyFile
+	}
+}
+
 func (srv *Server) URL() *url.URL {
-	return &url.URL{Scheme: "http", Host: "localhost:" + strconv.Itoa(srv.Port)}
+	return &url.URL{Scheme: "https", Host: srv.address}
 }
 
 func (srv *Server) BindToPort() error {
-	listener, err := net.Listen("tcp", ":" + strconv.Itoa(srv.Port))
+	listener, err := net.Listen("tcp", srv.address)
 	if err != nil {
 		return fmt.Errorf("net.Listen: %v", err)
 	}
@@ -35,7 +44,7 @@ func (srv *Server) AcceptConnections() error {
 	}
 
 	srv.httpsrv = http.Server{Handler: srv.handlerFunc()}
-	err := srv.httpsrv.Serve(srv.listener)
+	err := srv.httpsrv.ServeTLS(srv.listener, srv.tlsCertFile, srv.tlsKeyFile)
 	if err != http.ErrServerClosed {
 		return fmt.Errorf("httpsrv.Serve(): %v", err)
 	}
@@ -45,6 +54,13 @@ func (srv *Server) AcceptConnections() error {
 
 func (srv *Server) OnRequest(f func(http.ResponseWriter, *http.Request)) {
 	srv.onRequestHandler = http.HandlerFunc(f)
+}
+
+func (srv *Server) Stop() error{
+	err := srv.httpsrv.Close()
+	if err != nil { return fmt.Errorf("server.Close(): %v", err) }
+
+	return nil
 }
 
 func (srv *Server) handlerFunc() http.HandlerFunc {
