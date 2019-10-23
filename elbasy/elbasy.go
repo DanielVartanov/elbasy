@@ -10,12 +10,12 @@ func main() {
 	defer func() {
 		err := proxy.close()
 		if err != nil {
-			log.Fatalf("Error proxy.Close(): %v", err)
+			log.Fatalf("proxy.close(): %v", err)
 		}
 	}()
 
 	err := proxy.run()
 	if err != nil {
-		log.Fatalf("Error proxy.Run(): %v", err)
+		log.Fatalf("proxy.run(): %v", err)
 	}
 }

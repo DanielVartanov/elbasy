@@ -28,7 +28,7 @@ func newMitmConnHandler() *mitmConnHandler {
 	go func() {
 		err := mitm.startTLSServer(fakeListener)
 		if err != nil {
-			log.Fatalf("Error mitm.startTLSServer(): %v\n", err)
+			log.Fatalf("mitm.startTLSServer(): %v\n", err)
 		}
 	}()
 
@@ -38,7 +38,7 @@ func newMitmConnHandler() *mitmConnHandler {
 func (mitm *mitmConnHandler) close() error {
 	err := mitm.server.Close() // TODO: should be Shutdown() (or not?)
 	if err != nil {
-		return fmt.Errorf("ImpostorServer.server.Close(): %v", err)
+		return fmt.Errorf("mitmConnHandler.server.Close(): %v", err)
 	}
 	return nil
 }

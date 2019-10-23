@@ -50,12 +50,12 @@ func (px *proxy) acceptConnections() error {
 func (px *proxy) run() error {
 	err := px.bindToPort()
 	if err != nil {
-		return fmt.Errorf("proxy.BindToPort(): %v", err)
+		return fmt.Errorf("proxy.bindToPort(): %v", err)
 	}
 
 	err = px.acceptConnections()
 	if err != nil {
-		return fmt.Errorf("proxy.AcceptConnections(): %v", err)
+		return fmt.Errorf("proxy.acceptConnections(): %v", err)
 	}
 
 	return nil
