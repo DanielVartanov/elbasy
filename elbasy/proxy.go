@@ -9,6 +9,7 @@ import (
 	"strings"
 	"strconv"
 	"net/url"
+	"crypto/tls"
 )
 
 type proxy struct {
@@ -50,7 +51,9 @@ func (px *proxy) acceptConnections() error {
 		return fmt.Errorf("listener is empty, run bindToPort() first")
 	}
 
-	px.server = http.Server{Handler: px.handlerFunc()}
+	emptyMap := make(map[string]func(*http.Server, *tls.Conn, http.Handler)) // Empty map as TLSNextProto tells the Server *not* to upgrade to HTTP/2.x
+	px.server = http.Server{Handler: px.handlerFunc(), TLSNextProto: emptyMap}
+
 	err := px.server.ServeTLS(px.listener, px.tlsCertFile, px.tlsKeyFile)
 	if err != http.ErrServerClosed {
 		return fmt.Errorf("proxy.server.Serve(): %v", err)
