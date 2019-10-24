@@ -12,13 +12,13 @@ https://github.com/FiloSottile/mkcert
 1. Prepare a CA root certificate (it will install the CA into the local machine as well)
 `$ mkcert -install"
 
-The certificate and they key will put at `~/.local/share/mkcert`
+The certificate and the key will be put at `~/.local/share/mkcert`
 
 2. Generate a leaf certificate for every API host you are going to deal with
 `$ mkcert amazon.co.uk`
-`$ mkcert "*.myshopify.com`
+`$ mkcert "*.myshopify.com"`
 
-Certificates and keys will be put into the current directory
+The leaf certificates and the keys will be put into the current directory
 
 3. On each production machine:
 
