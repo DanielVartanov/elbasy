@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"net"
 	"net/http"
 	"strings"
 	"io/ioutil"
@@ -47,6 +48,14 @@ func setup(t *testing.T) {
 	client = http.Client{Transport: transport}
 }
 
+func waitForSrvClosure(host string) {
+	// Remove this method after the bug in golang stdlib is fixed: https://github.com/golang/go/issues/10527
+	for {
+		_, err := net.Dial("tcp", host)
+		if err != nil { break }
+	}
+}
+
 func teardown(t *testing.T) {
 	err := mockserver.Stop()
 	if err != nil { t.Logf("mockserver.Close(): %v", err) }
@@ -54,8 +63,8 @@ func teardown(t *testing.T) {
 	err = elbasy.close()
 	if err != nil { t.Logf("elbasy.close(): %v", err) }
 
-	// net.Dial until both servers are really off?
-	//   extract it to a separate pkg waitforserverclose/srvutil
+	waitForSrvClosure(elbasy.url().Host)
+	waitForSrvClosure(mockserver.URL().Host)
 }
 
 func sendRequest(t *testing.T, req *http.Request) *http.Response {
