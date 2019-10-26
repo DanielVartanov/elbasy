@@ -5,9 +5,6 @@ import (
 )
 
 func TestURL(t *testing.T) {
-	setup(t)
-	defer func() { teardown(t) }()
-
 	elbasy := newProxy("elbasy.lvh.me", 8443, "elbasy.lvh.me.pem", "elbasy.lvh.me-key.pem")
 
 	wantURL := "https://elbasy.lvh.me:8443"
