@@ -5,17 +5,17 @@ import (
 )
 
 func main() {
-	proxy := newProxy()
+	elbasy := newProxy(8443)
 
 	defer func() {
-		err := proxy.close()
+		err := elbasy.close()
 		if err != nil {
-			log.Fatalf("proxy.close(): %v", err)
+			log.Fatalf("elbasy.close(): %v", err)
 		}
 	}()
 
-	err := proxy.run()
+	err := elbasy.run()
 	if err != nil {
-		log.Fatalf("proxy.run(): %v", err)
+		log.Fatalf("elbasy.run(): %v", err)
 	}
 }

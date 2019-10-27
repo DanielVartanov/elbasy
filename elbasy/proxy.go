@@ -22,18 +22,16 @@ type proxy struct {
 	regularProxy *regularProxyConnHandler
 }
 
-func newProxy(host string, port int, tlsCertFile, tlsKeyFile string) *proxy {
+func newProxy(port int) *proxy {
 	return &proxy{
-		address: host + ":" + strconv.Itoa(port),
-		tlsCertFile: tlsCertFile,
-		tlsKeyFile: tlsKeyFile,
+		address: "localhost:" + strconv.Itoa(port),
 		regularProxy: newRegularProxyConnHandler(),
 		mitm: newMitmConnHandler(),
 	}
 }
 
 func (px *proxy) url() *url.URL {
-	return &url.URL{Scheme: "https", Host: px.address}
+	return &url.URL{Scheme: "http", Host: px.address}
 }
 
 func (px *proxy) bindToPort() error {
@@ -54,7 +52,7 @@ func (px *proxy) acceptConnections() error {
 	emptyMap := make(map[string]func(*http.Server, *tls.Conn, http.Handler)) // Empty map as TLSNextProto tells the Server *not* to upgrade to HTTP/2.x
 	px.server = http.Server{Handler: px.handlerFunc(), TLSNextProto: emptyMap}
 
-	err := px.server.ServeTLS(px.listener, px.tlsCertFile, px.tlsKeyFile)
+	err := px.server.Serve(px.listener)
 	if err != http.ErrServerClosed {
 		return fmt.Errorf("proxy.server.Serve(): %v", err)
 	}

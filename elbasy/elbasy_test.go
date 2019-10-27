@@ -5,9 +5,9 @@ import (
 )
 
 func TestURL(t *testing.T) {
-	elbasy := newProxy("elbasy.lvh.me", 8443, "elbasy.lvh.me.pem", "elbasy.lvh.me-key.pem")
+	elbasy := newProxy(18443)
 
-	wantURL := "https://elbasy.lvh.me:8443"
+	wantURL := "http://localhost:18443"
 	gotURL := elbasy.url().String()
 
 	if gotURL != wantURL {

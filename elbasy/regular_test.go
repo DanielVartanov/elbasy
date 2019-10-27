@@ -17,7 +17,7 @@ var client http.Client
 
 func setup(t *testing.T) {
 	// setup mock remote host
-	mockserver = mockremotehost.NewServer("non-throttling.lvh.me", 9001, "non-throttling.lvh.me.pem", "non-throttling.lvh.me-key.pem")
+	mockserver = mockremotehost.NewServer("non-throttling.lvh.me", 19001, "non-throttling.lvh.me.pem", "non-throttling.lvh.me-key.pem")
 
 	err := mockserver.BindToPort()
 	if err != nil { t.Fatalf("mockserver.BindToPort(): %v", err) }
@@ -28,7 +28,7 @@ func setup(t *testing.T) {
 	}()
 
 	// setup elbasy server
-	elbasy = newProxy("elbasy.lvh.me", 8443, "elbasy.lvh.me.pem", "elbasy.lvh.me-key.pem")
+	elbasy = newProxy(18443)
 
 	err = elbasy.bindToPort()
 	if err != nil { t.Fatalf("elbasy.bindToPort(): %v", err) }

@@ -51,7 +51,7 @@ What to do next
 *** [X] Test TLS server with `openssl` command line tool
 *** [V] Second-order server should be one per host. You set them up in advance (on startup), make them load the certs and their listeners' Accept() functions only do `return <-connectionsChannnnel`, where the channel gets populated by the proxy server as soon as we hijack a connection
 
-* [ ] Make it minimally production ready
+* [ ] Make it production ready
 ** [V] Generate Shopify certificate
 ** [V] Find a proper api key and try to make a request, look at quota headers, see what happens when quota is exceeded
 ** [V] Before you forget how to do it, write an instruction on how to generate and install a CA certificate and how to generate elbasy certificates for Shopify
@@ -70,7 +70,7 @@ What to do next
 *** [V] Read the best practices
 *** [V] Make it compilable
 *** [V] Make a binary
-*** Make an automated deployment procedure at Travis
+*** [V] Make an automated deployment procedure at Travis
 *** Generate and install certificates
 **** Figure out for how long a root certificatge and a leaf certificate can last in practice
 **** Generate a root certificate with Andrew and leave it with him to store the key very secretly
@@ -83,22 +83,15 @@ What to do next
 *** [ ] Test up to its limits
 ** [ ] Cover it with tests
 *** [ ] Tests for proxying entire requests and responses correctly from client to server and back
-
-How to test if client sends and server receives the same request: hijack connections at mock server and compare entire strings!
-
-test when not throttled
-   it copies from client to server
-   it copies from server to client
-   test many requests just go through without delay (meausre time and state it is less than a second, we measure time throttling tests anyway)
-
-test when throttled
-   it copies from client to server
-   it copies from server to client
-   test throttling per se
-     make a special testing server with whatever rules you want and test all supported models
-
-   Opinion: no need to measure a delay. It is enough to measure time whithin which all requests reach the mockServer and fuzzily compare it to a target time
-
+**** [V] test when not throttled
+***** [V] it copies from client to server
+***** [V] it copies from server to client
+***** [ ] test many requests just go through without delay (meausre time and state it is less than a second, we measure time throttling tests anyway)
+Opinion: no need to measure a delay. It is enough to measure time whithin which all requests reach the mockServer and fuzzily compare it to a target time
+**** [ ] test when throttled
+***** [ ]  it copies from client to server
+***** [ ]  it copies from server to client
+***** [ ]  test throttling per se
 *** Tests for closing connections
 *** Tests for actual throttling prevention
 *** Tests for detecting significant differenence between calculated and actual quota (test it with 7 requests at once)
@@ -108,8 +101,22 @@ test when throttled
 
 * [ ] Make it fire-and-forgettable
 ** [V] Update directory structure and switch to go1.13+
+** [ ] Dockerize it
+** [ ] Make it easy to re-install from scratch if needed in a year
+*** [ ] Automate an increase of the file count limit (can it be dockerised?)
+Add these 2 lines to /etc/security/limits.conf
+
+*         hard    nofile      65536
+*         soft    nofile      65536
+Then re-login and check that the change took place:
+
+$ ulimit -n
+
+it has to print 65536
+*** [ ] Include NGinx into the container, make it handle TLS, keep-alive client connections etc. Perhaps it could even work via HTTP/2
 
 * What to do next
+** ! Use HTTP/2 connection to each remote host, so that no matter how many 1000s of incoming request you have all of them are effeciently sent via a single HTTP/2 connection
 ** There should be a hardcoded list of supported APIs, i.e. those throttlnig properties of which are known and reverse-engineered. A database of API throttling rules.
 *** Those properties are: Detection of the API, throttling rules, reading the quota account, reading the current quota, detecting that quota is exceeded
 *** Configuration only sets out those which are used in the particular installation
@@ -136,6 +143,8 @@ test when throttled
 ** Implement next throttling models
 *** ClaimQuota should return `interface{}` -- a token (even a function if a counter wants so) to identify an exact request
 **** I bet it is easier to just accept `action func()` than to deal with tokens
+** Make it shutdown gracefully (waiting for the current requests) on receiving TERM signal
+** Make it shutdown on `C-c` and `C-c C-c`
 
 ** Refactor it
 *** Make tests more uniform, apply common patterns etc (do we need LastRequest if we have a function?)
