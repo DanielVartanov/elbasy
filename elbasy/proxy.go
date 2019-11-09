@@ -102,20 +102,17 @@ func (px proxy) handlerFunc() http.HandlerFunc {
 		clientConn, err := px.hijackConnection(responseWriter)
 		if err != nil {
 			log.Printf("Error hijacking connection: %v\n", err)
-			http.Error(responseWriter, "Error handling request", 500)
 		}
 
 		err = px.acknowledgeProxyToClient(clientConn)
 		if err != nil {
 			log.Printf("Error proxy.acknowledgeProxyToClient(): %v", err)
-			http.Error(responseWriter, "Error handling request", 500)
 		}
 
 		connHandler := px.chooseConnHandler(request.URL.Hostname())
 		err = connHandler.handleConnection(clientConn, request.Host)
 		if err != nil {
 			log.Printf("Error connHandler.HandleConnection(): %v\n", err)
-			http.Error(responseWriter, "Error handling request", 500)
 		}
 	})
 }
