@@ -49,9 +49,9 @@ What to do next
 **** [V] Pre-forge all the certs for supported APIs in advance? Or change them regularly?
 *** [V] Try to make it so that you only give the TLS-related code the cert and don't do any other crypto yourself
 *** [X] Test TLS server with `openssl` command line tool
-*** [V] Second-order server should be one per host. You set them up in advance (on startup), make them load the certs and their listeners' Accept() functions only do `return <-connectionsChannnnel`, where the channel gets populated by the proxy server as soon as we hijack a connection
+*** [V] Second-order server should be one per host. You set them up in advance (on startup), make them load the certs and their listeners' Accept() functions only do `return <-connectionsChannel`, where the channel gets populated by the proxy server as soon as we hijack a connection
 
-* [ ] Make it production ready
+* Make it production ready
 ** [V] Generate Shopify certificate
 ** [V] Find a proper api key and try to make a request, look at quota headers, see what happens when quota is exceeded
 ** [V] Before you forget how to do it, write an instruction on how to generate and install a CA certificate and how to generate elbasy certificates for Shopify
@@ -79,41 +79,41 @@ What to do next
 ** [V] Create an alert for `429 Too Many Requests` in logs
 ** Think of and make more metrics
 *** Difference between calculated quota and quota received in a response Header
-** [ ] Add support for Etsy.com
-*** [ ] Test up to its limits
-** [ ] Cover it with tests
-*** [ ] Tests for proxying entire requests and responses correctly from client to server and back
+** Add support for Etsy.com
+*** Test up to its limits
+** Cover it with tests
+*** Tests for proxying entire requests and responses correctly from client to server and back
 **** [V] test when not throttled
 ***** [V] it copies from client to server
 ***** [V] it copies from server to client
-***** [ ] test many requests just go through without delay (meausre time and state it is less than a second, we measure time throttling tests anyway)
+***** test many requests just go through without delay (meausre time and state it is less than a second, we measure time throttling tests anyway)
 Opinion: no need to measure a delay. It is enough to measure time whithin which all requests reach the mockServer and fuzzily compare it to a target time
-**** [ ] test when throttled
-***** [ ]  it copies from client to server
-***** [ ]  it copies from server to client
-***** [ ]  test throttling per se
+**** test when throttled
+*****  it copies from client to server
+*****  it copies from server to client
+*****  test throttling per se
 *** Tests for closing connections
 *** Tests for actual throttling prevention
 *** Tests for detecting significant differenence between calculated and actual quota (test it with 7 requests at once)
 ** [V] Rename ElbasyServer to ImpostorServer, elbasy_certificates to impostor_certificates, entire project to elbasy
 ** Shutdown gracefully on SIGTERM
 ** Test it with race detectors https://blog.golang.org/race-detector
+*** Include NGinx into the container, make it handle TLS, keep-alive client connections etc. Perhaps it could even work via HTTP/2
+** Dockerize it
 
-* [ ] Make it fire-and-forgettable
+* Make it fire-and-forgettable
 ** [V] Update directory structure and switch to go1.13+
-** [ ] Dockerize it
-** [ ] Make it easy to re-install from scratch if needed in a year
-*** [ ] Automate an increase of the file count limit (can it be dockerised?)
-Add these 2 lines to /etc/security/limits.conf
-
-*         hard    nofile      65536
-*         soft    nofile      65536
-Then re-login and check that the change took place:
-
-$ ulimit -n
-
-it has to print 65536
-*** [ ] Include NGinx into the container, make it handle TLS, keep-alive client connections etc. Perhaps it could even work via HTTP/2
+** Ignore error "regularConnHandler.handleConnection(): io.Copy(clientConn, serverConn): readfrom tcp 127.0.0.1:8443->127.0.0.1:56470: write tcp 127.0.0.1:8443->127.0.0.1:56470: write: broken pipe"
+** Investigate what makes regularproxy dial 0.0.0.0:443
+*** If it is not CONNECT, reply with a proper response of redirect to the github page README
+** [V] Investigate why elbasy is limited to 1024 file descriptors and fix it
+** Measure if file descriptors really leak far beyond 1024
+** Fix the file descriptors leak if there is any
+sudo lsof | grep elbasy
+*** ? Close a connection in case of error in Proxy.handlerFunc()
+** Make it easy to re-install from scratch if needed in a year
+*** [V] Automate an increase of the file count limit
+          # NOTE: Just added `LimitNOFILE=1048576` to the elbasy systemd service definition file
 
 * What to do next
 ** ! Use HTTP/2 connection to each remote host, so that no matter how many 1000s of incoming request you have all of them are effeciently sent via a single HTTP/2 connection
@@ -159,6 +159,7 @@ https://codesamplez.com/development/golang-unit-testing
 
 * Make it usable by the general public
 ** Should we make certificates regeneation anyhow automatic?
+** https://stackoverflow.com/questions/44929223/why-should-i-use-fork-to-daemonize-my-process/44929497#44929497
 
 * Make the first version presentable at a meetup/conference
 ** [X] Make Client<->Proxy connection secure as well, it must have a certificate and use ServeTLS
